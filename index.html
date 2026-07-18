@@ -1,0 +1,2110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apprentissage multimédia & environnements immersifs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #10121a;
+    --bg-raised: #171a25;
+    --bg-card: #1b1f2d;
+    --line: #2a2f42;
+    --text: #e7e6ef;
+    --text-dim: #a3a6bd;
+    --text-faint: #868bad;
+    --amber: #e3a63e;   /* écran / Mayer / CTML */
+    --amber-dim: #4a3a1f;
+    --teal: #45c7b5;    /* immersion / VR / CAMIL */
+    --teal-dim: #1c3a37;
+    --violet: #8b7fe0;  /* charge cognitive / synthèse */
+    --violet-dim: #3a2f4a;
+    --red-soft: #d9765a;
+    --green-soft: #7fbf8f;
+    --radius: 14px;
+    --serif: "Source Serif 4", Georgia, serif;
+    --sans: "IBM Plex Sans", -apple-system, sans-serif;
+    --mono: "IBM Plex Mono", monospace;
+  }
+  /* Défaut système : si l'utilisateur préfère clair et n'a pas choisi manuellement, on part en clair */
+  @media (prefers-color-scheme: light){
+    html:not([data-theme="dark"]) {
+      --bg: #f7f7fb;
+      --bg-raised: #eef0f6;
+      --bg-card: #ffffff;
+      --line: #d9dced;
+      --text: #1c1e2a;
+      --text-dim: #4a4d63;
+      --text-faint: #7a7e97;
+      --amber: #b9781a;   --amber-dim: #f3e6cd;
+      --teal: #1f9e8c;    --teal-dim: #cdeae5;
+      --violet: #6a5cc4;  --violet-dim: #e4dff4;
+      --red-soft: #c0563a;
+      --green-soft: #1f6b3e;
+    }
+    html:not([data-theme="dark"]) ::selection{ background:var(--teal); color:#ffffff; }
+  }
+  html[data-theme="light"]{
+    --bg: #f7f7fb;
+    --bg-raised: #eef0f6;
+    --bg-card: #ffffff;
+    --line: #d9dced;
+    --text: #1c1e2a;
+    --text-dim: #4a4d63;
+    --text-faint: #5b5f7d;
+    --amber: #875808;   --amber-dim: #f3e6cd;
+    --teal: #0d7567;    --teal-dim: #cdeae5;
+    --violet: #6a5cc4;  --violet-dim: #e4dff4;
+    --red-soft: #a23f25;
+    --green-soft: #1f6b3e;
+  }
+  html[data-theme="light"] ::selection{ background:var(--teal); color:#ffffff; }
+
+  /* ---------- Thème clair : effets d'interaction renforcés ---------- */
+  /* Ombres douces au survol (peu visibles via la seule bordure sur fond blanc) */
+  html[data-theme="light"] .p-card{ transition:border-color .15s, box-shadow .15s, transform .15s; }
+  html[data-theme="light"] .p-card:hover{ border-color:var(--teal); box-shadow:0 4px 14px rgba(31,158,140,.14); transform:translateY(-2px); }
+  html[data-theme="light"] .p-card.open{ border-color:var(--teal); box-shadow:0 2px 10px rgba(31,158,140,.10); }
+  html[data-theme="light"] .triad-card:hover{ box-shadow:0 4px 14px rgba(0,0,0,.07); }
+  html[data-theme="light"] .camil-step:hover{ box-shadow:0 4px 14px rgba(0,0,0,.07); }
+  html[data-theme="light"] .chk-item:hover{ border-color:var(--teal); }
+  /* Arbre de décision : options plus contrastées */
+  html[data-theme="light"] .tree-opt:hover{ background:var(--teal-dim); border-color:var(--teal); color:var(--teal); }
+  /* Nav latérale : survol + item actif plus marqués */
+  html[data-theme="light"] nav.side a:hover{ background:var(--teal-dim); color:var(--text); }
+  html[data-theme="light"] nav.side a.active{ background:var(--teal-dim); }
+  /* Frise : nœud actif plus lisible */
+  html[data-theme="light"] .frise-node.active .node-dot{ box-shadow:0 0 0 4px var(--teal-dim); }
+  /* Boutons flottants : accent au survol */
+  html[data-theme="light"] .to-top:hover,
+  html[data-theme="light"] .theme-toggle:hover{ background:var(--teal-dim); border-color:var(--teal); color:var(--teal); }
+  /* Roue de Bloom : légère surbrillance du segment survolé */
+  html[data-theme="light"] .bloom-seg:hover{ opacity:1; }
+  /* Barre de progression : piste + barre plus épaisses et contrastées */
+  html[data-theme="light"] .read-progress-track{ height:4px; background:#c5c9de; }
+  html[data-theme="light"] .read-progress{ box-shadow:0 1px 3px rgba(0,0,0,.18); }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
+    line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--teal); color:#0a0d12;}
+  a{color:var(--teal);}
+
+  .layout{ display:grid; grid-template-columns: 250px 1fr; max-width:1280px; margin:0 auto; }
+  nav.side{
+    position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+    padding:32px 20px; border-right:1px solid var(--line);
+    scrollbar-width:thin; scrollbar-color:transparent transparent;
+    /* fondu en haut et en bas de la barre de défilement */
+    -webkit-mask-image:linear-gradient(to bottom, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+            mask-image:linear-gradient(to bottom, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+  }
+  nav.side:hover{ scrollbar-color:var(--violet) transparent; }
+  nav.side::-webkit-scrollbar{ width:8px; }
+  nav.side::-webkit-scrollbar-track{ background:transparent; }
+  nav.side::-webkit-scrollbar-thumb{ background:transparent; border-radius:8px; border:2px solid transparent; transition:background .2s, border-color .2s; }
+  nav.side:hover::-webkit-scrollbar-thumb{ background:var(--violet); border:2px solid var(--bg); }
+  nav.side::-webkit-scrollbar-thumb:hover{ background:var(--teal); }
+  nav.side .brand{ font-family:var(--serif); font-size:1.05rem; color:var(--text); margin-bottom:4px;}
+  nav.side .brand small{ display:block; font-family:var(--mono); font-size:.68rem; color:var(--text-faint); letter-spacing:.06em; margin-top:6px; text-transform:uppercase;}
+  nav.side ul{ list-style:none; padding:0; margin:28px 0 0; }
+  nav.side li{ margin-bottom:2px; }
+  nav.side a{
+    display:block; padding:7px 10px; border-radius:8px; color:var(--text-dim);
+    text-decoration:none; font-size:.86rem; transition:.15s;
+  }
+  nav.side a:hover{ background:var(--bg-card); color:var(--text); }
+  nav.side a.active{ background:var(--bg-card); color:var(--text); box-shadow:inset 3px 0 0 var(--teal), 0 0 0 1px var(--text-faint); }
+  nav.side .grp-label{ font-family:var(--mono); font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--teal); font-weight:600; margin:20px 10px 8px; padding-bottom:5px; border-bottom:1px solid var(--line); }
+  nav.side .grp-label:first-of-type{ margin-top:8px; }
+  .nav-toggle{ display:none; width:100%; margin-bottom:14px; padding:10px 14px; border-radius:8px; cursor:pointer;
+    background:var(--bg-card); border:1px solid var(--line); color:var(--text); font-family:var(--mono); font-size:.78rem; text-align:left; }
+  .nav-toggle:hover{ border-color:var(--teal); color:var(--teal); }
+  /* #4 — chip mobile « vous êtes dans : <partie> » (affiché sous le toggle en mobile) */
+  .nav-crumb{ display:none; }
+  @media (max-width:1024px){
+    .nav-crumb{
+      display:inline-flex; align-items:center; gap:7px; margin-bottom:12px;
+      font-family:var(--mono); font-size:.68rem; text-transform:uppercase; letter-spacing:.08em;
+      color:var(--text-faint);
+    }
+    .nav-crumb b{ color:var(--teal); font-weight:600; }
+  }
+
+  /* ---------- A11Y : focus visible + skip link ---------- */
+  :focus-visible{ outline:2px solid var(--teal); outline-offset:2px; border-radius:4px; }
+  .skip-link{
+    position:absolute; left:12px; top:-48px; z-index:100;
+    background:var(--teal); color:#0a0d12; padding:9px 16px; border-radius:8px;
+    font-family:var(--mono); font-size:.8rem; font-weight:500; text-decoration:none;
+    transition:top .18s ease;
+  }
+  .skip-link:focus{ top:12px; }
+
+  /* ---------- Barre de progression de lecture ---------- */
+  .read-progress-track{
+    position:fixed; top:0; left:0; width:100%; height:3px;
+    background:var(--line); z-index:90;
+  }
+  .read-progress{
+    height:100%; width:0%;
+    background:linear-gradient(90deg, var(--amber), var(--violet), var(--teal));
+    transition:width .1s linear;
+  }
+
+  /* ---------- Bouton retour en haut ---------- */
+  .to-top{
+    position:fixed; bottom:28px; right:28px; z-index:80;
+    width:44px; height:44px; border-radius:50%;
+    background:var(--bg-card); border:1px solid var(--line); color:var(--text-dim);
+    font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none; transform:translateY(8px); transition:opacity .2s, transform .2s, border-color .2s, color .2s;
+  }
+  .to-top.show{ opacity:1; pointer-events:auto; transform:translateY(0); }
+  .to-top:hover{ border-color:var(--teal); color:var(--teal); }
+
+  /* ---------- Bouton bascule de thème ---------- */
+  .theme-toggle{
+    position:fixed; top:16px; right:28px; z-index:95;
+    display:flex; align-items:center; gap:0;
+    background:var(--bg-card); border:1px solid var(--line); color:var(--text-dim);
+    padding:7px 13px; border-radius:20px; cursor:pointer;
+    font-family:var(--mono); font-size:.72rem; letter-spacing:.03em;
+    transition:border-color .2s, color .2s, background .2s;
+  }
+  .theme-toggle:hover{ border-color:var(--teal); color:var(--text); }
+  .theme-toggle .tt-icon{ font-size:.95rem; line-height:1; display:block; }
+  .theme-toggle .tt-label{
+    max-width:0; overflow:hidden; white-space:nowrap; opacity:0;
+    transition:max-width .2s ease, opacity .2s ease, margin-left .2s ease;
+    margin-left:0;
+  }
+  .theme-toggle:hover .tt-label,
+  .theme-toggle:focus-visible .tt-label{ max-width:60px; opacity:1; margin-left:7px; }
+  @media (max-width:900px){
+    .theme-toggle{ top:auto; bottom:28px; left:28px; right:auto; }
+  }
+
+  main{ padding:56px 56px 120px; min-width:0; }
+  section{ margin-bottom:96px; scroll-margin-top:28px; }
+  .eyebrow{ font-family:var(--mono); font-size:.72rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-faint); margin-bottom:10px;}
+  h1{ font-family:var(--serif); font-weight:700; font-size:2.6rem; line-height:1.12; margin:0 0 18px; }
+  h2{ font-family:var(--serif); font-weight:600; font-size:1.7rem; margin:0 0 6px; }
+  h3{ font-family:var(--serif); font-weight:600; font-size:1.15rem; margin:0 0 8px;}
+  .section-intro{ color:var(--text-dim); max-width:640px; margin-bottom:32px; font-size:.98rem; text-align:justify; text-justify:inter-word; }
+  p{ color:var(--text-dim); }
+  section > p{ text-align:justify; text-justify:inter-word; }
+  .lede{ font-size:1.12rem; color:var(--text-dim); max-width:620px; text-align:justify; text-justify:inter-word; }
+  /* texte justifié dans le corps, hors éléments techniques */
+  .hero-widget, .hero-widget *, .code, table, .q-table, .card, .p-card, .triad-card, ul, ol, li, blockquote, .reflist, .nav, .quick-access{ text-align:left; }
+  /* accès rapide sous le sous-titre — boutons avec panneau au survol */
+  .quick-access{ display:flex; flex-wrap:wrap; gap:12px; margin-top:26px; max-width:760px; }
+  .qa-item{ position:relative; }
+  .qa-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:.84rem; font-weight:600; color:var(--text);
+    background:var(--bg-card); border:1px solid var(--line); border-radius:999px;
+    padding:8px 16px; cursor:pointer; transition:.15s;
+  }
+  .qa-btn:hover, .qa-item:focus-within .qa-btn{ border-color:var(--teal); color:var(--teal); }
+  .qa-btn .caret{ width:0; height:0; border-left:4px solid transparent; border-right:4px solid transparent; border-top:5px solid currentColor; transition:transform .15s; }
+  .qa-item:hover .qa-btn .caret, .qa-item:focus-within .qa-btn .caret{ transform:rotate(180deg); }
+  .qa-panel{
+    position:absolute; top:calc(100% + 8px); left:0; z-index:20;
+    min-width:230px; padding:10px;
+    background:var(--bg-raised); border:1px solid var(--line); border-radius:12px;
+    box-shadow:0 12px 32px rgba(0,0,0,.18);
+    opacity:0; visibility:hidden; transform:translateY(-6px); transition:.16s;
+  }
+  .qa-item:hover .qa-panel, .qa-item:focus-within .qa-panel{ opacity:1; visibility:visible; transform:translateY(0); }
+  .qa-hint{ font-family:var(--mono); font-size:.6rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); margin:2px 4px 8px; }
+  .qa-panel a{ display:block; font-size:.82rem; color:var(--text); text-decoration:none; padding:7px 10px; border-radius:8px; transition:.12s; }
+  .qa-panel a:hover{ background:color-mix(in srgb, var(--teal) 12%, transparent); color:var(--teal); }
+
+  /* ---------- HERO / SLIDER SIGNATURE ---------- */
+  .hero-widget{
+    background:linear-gradient(160deg, var(--bg-card), var(--bg-raised));
+    border:1px solid var(--line); border-radius:var(--radius); padding:32px 36px; margin-top:36px;
+  }
+  .hero-widget .axis-labels{ display:flex; justify-content:space-between; font-family:var(--mono); font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px;}
+  .axis-labels .lo{color:var(--amber);} .axis-labels .hi{color:var(--teal);}
+  input[type=range]{
+    -webkit-appearance:none; width:100%; height:6px; border-radius:3px;
+    background:linear-gradient(90deg, var(--amber), var(--violet), var(--teal));
+    outline:none; margin:0;
+  }
+  input[type=range]#designSlider{
+    background:linear-gradient(90deg, var(--red-soft), var(--teal));
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:20px; height:20px; border-radius:50%;
+    background:var(--text); border:3px solid var(--bg); cursor:pointer;
+    box-shadow:0 0 0 2px var(--line);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:20px; height:20px; border-radius:50%; background:var(--text); border:3px solid var(--bg); cursor:pointer;
+  }
+  .axis-labels .lo2{ color:var(--red-soft); }
+  .axis-labels .hi2{ color:var(--teal); }
+  /* sliders regroupés sur une ligne, plus petits */
+  .sliders-row{ display:flex; gap:24px; margin-top:18px; }
+  .slider-cell{ flex:1; min-width:0; }
+  .axis-labels.sm{ font-size:.66rem; margin-top:0; margin-bottom:2px; }
+  .slider-cell input[type=range]{ height:4px; }
+  .slider-cell input[type=range]::-webkit-slider-thumb{ width:15px; height:15px; }
+  .slider-cell input[type=range]::-moz-range-thumb{ width:15px; height:15px; }
+  /* ---- Jauge de charge cognitive : barre horizontale (capacité MW = 100 %) ---- */
+  .load-bar{
+    position:relative; display:flex; height:32px; margin-top:18px;
+    border:1px solid var(--line); border-radius:8px; overflow:visible;
+  }
+  .load-seg{ height:100%; flex:0 0 auto; transition:width .35s ease, background .35s ease; position:relative; }
+  .load-seg:first-child{ border-radius:7px 0 0 7px; }
+  .load-seg:last-child{ border-radius:0 7px 7px 0; }
+  .seg-intr{ background:var(--text-faint); }
+  .seg-extr{ background:var(--red-soft); }
+  .seg-germ{ background:var(--teal); }
+  .seg-germ.warn{ background:var(--amber); }
+  .seg-germ.risk{ background:var(--red-soft); }
+  /* étiquettes dans la jauge : libellé puis valeur en dessous — texte blanc uni, gras, net */
+  .seg-tag{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); text-align:center; line-height:1.2; white-space:nowrap;
+    font-family:var(--mono); font-size:.66rem; font-weight:700; pointer-events:none; color:var(--bg); }
+  .seg-tag .t-label{ display:block; }
+  .seg-tag .t-val{ display:block; }
+  .load-bar .occup-mark{ display:none; }
+  .load-readout{ display:flex; flex-wrap:wrap; align-items:center; gap:16px; margin-top:12px; }
+  .tube-note{ font-size:.74rem; color:var(--text-faint); margin:12px 0 16px; line-height:1.6; }
+  .tube-note b{ color:var(--text-dim); font-weight:600; }
+  .load-legend{ display:flex; flex-wrap:wrap; gap:14px; font-size:.8rem; color:var(--text-dim);}
+  .load-legend span{ display:inline-flex; align-items:center; gap:7px; }
+  .load-legend .dot{ width:10px; height:10px; border-radius:3px; display:inline-block; }
+  .load-legend b{ color:var(--text); font-family:var(--mono); }
+  .load-legend .dot.intr{ background:var(--text-faint); }
+  .load-legend .dot.extr{ background:var(--red-soft); }
+  .load-legend .dot.germ{ background:var(--teal); }
+
+  /* ---- Jauge de présence (promue au-dessus de la jauge de charge) ---- */
+  .presence-block{ display:flex; flex-direction:column; gap:6px; min-width:200px; flex:1; }
+  .pm-head{ display:flex; justify-content:space-between; font-size:.76rem; color:var(--text-dim); }
+  .pm-head b{ color:var(--teal); font-family:var(--mono); }
+  .pm-track.tall{ height:12px; background:var(--bg); border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+  .pm-fill{ height:100%; background:linear-gradient(90deg, var(--teal), var(--violet)); border-radius:6px; transition:width .35s ease; }
+
+  /* ---- Badge d'adéquation (4 niveaux) ---- */
+  .fit-badge{ display:inline-flex; align-items:center; gap:7px; padding:5px 12px; border-radius:20px;
+    font-family:var(--mono); font-size:.72rem; font-weight:500; }
+  .fit-badge::before{ content:""; width:7px; height:7px; border-radius:50%; background:currentColor; opacity:.9; }
+  .fit-badge.ok{ background:#e6f4f2; color:var(--teal); }
+  .fit-badge.good{ background:#1d3a2e; color:#a9e0c0; }
+  .fit-badge.tension{ background:var(--amber-dim); color:var(--amber); }
+  .fit-badge.risk{ background:var(--red-soft); color:#fff; }
+  /* #5 — tooltip explicatif au survol/focus du badge d'adéquation */
+  .fit-badge{ position:relative; cursor:help; }
+  .fit-badge::after{
+    content:attr(data-tip);
+    position:absolute; left:50%; bottom:calc(100% + 9px); transform:translateX(-50%) translateY(4px);
+    width:max-content; max-width:260px; padding:9px 12px;
+    background:var(--text); color:var(--bg);
+    font-family:var(--sans); font-size:.74rem; font-weight:400; line-height:1.35; text-align:left;
+    border-radius:8px; box-shadow:0 10px 26px rgba(0,0,0,.28);
+    opacity:0; visibility:hidden; pointer-events:none; transition:.16s; z-index:30;
+  }
+  .fit-badge:hover::after, .fit-badge:focus-visible::after{ opacity:1; visibility:visible; transform:translateX(-50%) translateY(0); }
+  .fit-badge::before{ content:""; width:7px; height:7px; border-radius:50%; background:currentColor; opacity:.9; }
+  #interp{
+    margin-top:18px; padding:16px 18px; background:var(--bg); border-left:3px solid var(--violet);
+    border-radius:6px; font-size:.92rem; color:var(--text-dim); min-height:70px;
+  }
+  #interp strong{color:var(--text);}
+
+  /* ---------- PRINCIPLE CARDS ---------- */
+  .principle-groups{ display:flex; flex-direction:column; gap:36px; }
+  .pg-header{ display:flex; align-items:baseline; gap:10px; margin-bottom:14px;}
+  .pg-header .tag{ font-family:var(--mono); font-size:.68rem; padding:3px 9px; border-radius:20px; text-transform:uppercase; letter-spacing:.05em;}
+  .tag.reduce{ background:var(--amber-dim); color:var(--amber);}
+  .tag.manage{ background:var(--violet-dim); color:var(--violet);}
+  .tag.foster{ background:var(--teal-dim); color:var(--teal);}
+  .card-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:14px;}
+  .p-card{
+    background:var(--bg-card); border:1px solid var(--line); border-radius:12px; padding:16px 18px;
+    cursor:pointer; transition:.15s;
+  }
+  .p-card:hover{ border-color:var(--text-faint); }
+  .p-card .p-name{ font-weight:600; font-size:.96rem; color:var(--text); margin-bottom:4px;}
+  .p-card .p-gauge{ display:flex; align-items:center; gap:8px; margin:8px 0; }
+  .p-gauge .dots{ display:flex; gap:3px; }
+  .p-gauge .dot{ width:7px; height:7px; border-radius:50%; background:var(--line); }
+  .p-gauge .dot.on{ background:var(--amber); }
+  .p-gauge .gauge-label{ font-family:var(--mono); font-size:.65rem; color:var(--text-faint); text-transform:uppercase; }
+  .p-card .p-hint{ font-size:.72rem; color:var(--text-faint); font-family:var(--mono); }
+  .p-card{ background:color-mix(in srgb, var(--c, var(--violet)) 6%, var(--bg-card)); }
+  .p-card:hover{ border-color:var(--c, var(--text-faint)); }
+  .p-card{
+    border:1px solid var(--line); border-top:3px solid var(--c, var(--violet));
+    border-radius:12px; padding:16px 18px; cursor:pointer; transition:.15s;
+  }
+  .p-card .p-name{ font-weight:600; font-size:.96rem; color:var(--text); margin-bottom:4px;}
+  .p-card .p-def{ font-size:.82rem; color:var(--text-faint); margin-bottom:2px; }
+  .p-card .p-detail{ display:none; font-size:.85rem; margin-top:8px; padding-top:8px; border-top:1px solid var(--line); color:var(--text-dim);}
+  .p-card.open .p-detail{ display:block; }
+  .p-card.acc, .p-card.has-detail{ cursor:pointer; }
+  .p-card.acc .p-detail{ display:none; margin-top:8px; padding-top:8px; border-top:1px solid var(--line); color:var(--text-dim); font-size:.88rem; }
+  .p-card.acc.open .p-detail{ display:block; }
+  /* ---------- Bloc « Points de vigilance » (cartés titres + texte à la ligne) ---------- */
+  .vigilance{
+    background:color-mix(in srgb, var(--c, var(--violet)) 6%, var(--bg-card));
+    border:1px solid var(--line); border-top:3px solid var(--c, var(--violet));
+    border-radius:12px; padding:16px 18px; transition:.15s;
+  }
+  .vigilance:hover{ border-color:var(--c, var(--text-faint)); }
+  .vigilance .p-name{ font-weight:600; font-size:.96rem; color:var(--text); margin-bottom:6px; }
+  .vigilance .p-text{ font-size:.86rem; color:var(--text-dim); line-height:1.5; }
+  /* Effet sur les cartes à 2nd niveau (cliquables / dépliables) : chevron fin */
+  /* La flèche n'apparaît QUE si la carte possède un 2nd niveau (.has-detail, posé en JS) */
+  .p-card.acc, .triad-card.acc{ position:relative; }
+  .p-card.has-detail::after, .triad-card.acc.has-detail::after{
+    content:""; position:absolute; top:18px; right:18px;
+    width:7px; height:7px;
+    border-right:1.5px solid var(--c, var(--text-faint));
+    border-bottom:1.5px solid var(--c, var(--text-faint));
+    transform:rotate(45deg); /* pointe en bas = replié */
+    opacity:.4; pointer-events:none;
+    transition:transform .2s ease, opacity .2s ease;
+  }
+  .p-card.has-detail:hover::after, .triad-card.acc.has-detail:hover::after{ opacity:1; }
+  .p-card.has-detail.open::after, .triad-card.acc.has-detail.open::after{ transform:rotate(225deg); opacity:1; } /* pointe en haut = déplié */
+  /* 12 principes de Mayer : couleurs du slider (Intro), mélangees par carte pour un rendu équilibré */
+  /* Groupe 1 « Réduire » (7 cartes) : R / G / T en alternance */
+  #principes .principle-groups > div:nth-of-type(1) .p-card:nth-of-type(1){ --c:#e87474; }
+  #principes .principle-groups > div:nth-of-type(1) .p-card:nth-of-type(2){ --c:#98a3b1; }
+  #principes .principle-groups > div:nth-of-type(1) .p-card:nth-of-type(3){ --c:#47c0b8; }
+  #principes .principle-groups > div:nth-of-type(1) .p-card:nth-of-type(4){ --c:#df5d5d; }
+  #principes .principle-groups > div:nth-of-type(1) .p-card:nth-of-type(5){ --c:#6d7a8a; }
+  #principes .principle-groups > div:nth-of-type(1) .p-card:nth-of-type(6){ --c:#31b4ac; }
+  #principes .principle-groups > div:nth-of-type(1) .p-card:nth-of-type(7){ --c:#c23b3b; }
+
+  /* Groupe 2 « Gérer » (5 cartes) */
+  #principes .principle-groups > div:nth-of-type(2) .p-card:nth-of-type(1){ --c:#e87474; }
+  #principes .principle-groups > div:nth-of-type(2) .p-card:nth-of-type(2){ --c:#98a3b1; }
+  #principes .principle-groups > div:nth-of-type(2) .p-card:nth-of-type(3){ --c:#47c0b8; }
+  #principes .principle-groups > div:nth-of-type(2) .p-card:nth-of-type(4){ --c:#df5d5d; }
+  #principes .principle-groups > div:nth-of-type(2) .p-card:nth-of-type(5){ --c:#6d7a8a; }
+
+  /* Groupe 3 « Favoriser » (5 cartes) */
+  #principes .principle-groups > div:nth-of-type(3) .p-card:nth-of-type(1){ --c:#e87474; }
+  #principes .principle-groups > div:nth-of-type(3) .p-card:nth-of-type(2){ --c:#98a3b1; }
+  #principes .principle-groups > div:nth-of-type(3) .p-card:nth-of-type(3){ --c:#47c0b8; }
+  #principes .principle-groups > div:nth-of-type(3) .p-card:nth-of-type(4){ --c:#df5d5d; }
+  #principes .principle-groups > div:nth-of-type(3) .p-card:nth-of-type(5){ --c:#6d7a8a; }
+
+  .triad{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:24px;}
+  .triad-card{ background:var(--bg-card); border:1px solid var(--line); border-radius:12px; padding:20px; border-top:3px solid var(--c);}
+  .triad-card h3{ margin-bottom:6px; }
+  .triad-card p{ font-size:.88rem; }
+  .triad-card.acc{ cursor:pointer; }
+  .triad-card.acc .p-detail{ display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--line); color:var(--text-dim); font-size:.85rem; }
+  .triad-card.acc.open .p-detail{ display:block; }
+  /* niveau d'information supplémentaire sur les cartes CTML (B + A + C) */
+  .triad-practice{ color:var(--teal); font-size:.82rem; font-weight:500; margin-top:10px; line-height:1.45; }
+  .triad-source{ font-family:var(--mono); font-size:.68rem; color:var(--text-faint); margin-top:8px; letter-spacing:.02em; }
+  .triad-link{ font-size:.78rem; color:var(--text-faint); margin-top:6px; }
+  .triad-link a{ color:var(--teal); text-decoration:none; border-bottom:1px dotted var(--teal); }
+  .triad-link a:hover{ color:var(--text); border-bottom-color:var(--text); }
+
+  /* ---------- Cognition & Biais : même traitement que Principes / Vigilance ---------- */
+  #cognition-immersion .triad-card,
+  #biais .triad-card{
+    background:color-mix(in srgb, var(--c, var(--violet)) 6%, var(--bg-card));
+    border-top:3px solid var(--c, var(--violet));
+    transition:border-color .15s, box-shadow .15s;
+  }
+  #cognition-immersion .triad-card.acc:hover,
+  #biais .triad-card.acc:hover{
+    border-color:var(--c, var(--text-faint));
+  }
+
+  /* palette BLENDED par carte (couleurs distinctes, non monochrome) */
+  #cognition-immersion .card-grid .triad-card:nth-of-type(1){ --c:var(--amber); }
+  #cognition-immersion .card-grid .triad-card:nth-of-type(2){ --c:var(--teal); }
+  #cognition-immersion .card-grid .triad-card:nth-of-type(3){ --c:var(--violet); }
+
+  #biais .card-grid .triad-card:nth-of-type(1){ --c:var(--amber); }
+  #biais .card-grid .triad-card:nth-of-type(2){ --c:var(--teal); }
+  #biais .card-grid .triad-card:nth-of-type(3){ --c:var(--violet); }
+  #biais .card-grid .triad-card:nth-of-type(4){ --c:var(--green-soft); }
+  #biais .card-grid .triad-card:nth-of-type(5){ --c:var(--red-soft); }
+
+  /* ---------- CAMIL DIAGRAM ---------- */
+  .camil-flow{ display:flex; align-items:stretch; gap:0; margin:28px 0; overflow-x:auto; padding-bottom:6px;}
+  .camil-step{
+    background:var(--bg-card); border:1px solid var(--line); border-radius:12px; padding:16px 18px;
+    min-width:190px; flex:1; position:relative;
+  }
+  .camil-step h4{ margin:0 0 6px; font-size:.82rem; font-family:var(--mono); text-transform:uppercase; letter-spacing:.04em; color:var(--teal);}
+  .camil-step p{ font-size:.83rem; margin:0;}
+  .camil-arrow{ display:flex; align-items:center; justify-content:center; width:34px; color:var(--text-faint); font-size:1.3rem; flex-shrink:0;}
+
+  .callout{
+    background:var(--bg-card); border:1px solid var(--line); border-left:3px solid var(--red-soft);
+    border-radius:8px; padding:16px 18px; margin:20px 0; font-size:.9rem; color:var(--text-dim);
+  }
+  .callout.good{ border-left-color:var(--green-soft);}
+  .callout b{ color:var(--text); }
+
+  /* ---------- DECISION TREE ---------- */
+  .tree-box{ background:var(--bg-card); border:1px solid var(--line); border-radius:var(--radius); padding:28px 32px;}
+  .tree-question{ font-family:var(--serif); font-size:1.2rem; margin-bottom:16px;}
+  .tree-options{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px;}
+  .tree-opt{
+    background:var(--bg); border:1px solid var(--line); color:var(--text); padding:10px 16px;
+    border-radius:8px; cursor:pointer; font-size:.88rem; font-family:var(--sans); transition:.15s;
+  }
+  .tree-opt:hover{ border-color:var(--teal); color:var(--teal); }
+  .tree-path{ font-family:var(--mono); font-size:.72rem; color:var(--text-faint); margin-bottom:10px;}
+  .tree-result{ display:none; }
+  .tree-result.show{ display:block; }
+  .tree-result h3{ color:var(--teal); }
+  .restart{ margin-top:14px; background:none; border:1px solid var(--line); color:var(--text-dim); padding:8px 14px; border-radius:8px; cursor:pointer; font-family:var(--mono); font-size:.72rem;}
+  .restart:hover{ border-color:var(--text-faint); }
+  .tree-actions{ margin-top:18px; min-height:1px; }
+  .tree-prev{ background:none; border:1px solid var(--line); color:var(--text-dim); padding:8px 14px; border-radius:8px; cursor:pointer; font-family:var(--mono); font-size:.72rem; transition:border-color .15s, color .15s; }
+  .tree-prev:hover{ border-color:var(--teal); color:var(--teal); }
+
+  /* ---------- CHECKLIST ---------- */
+  .checklist{ display:flex; flex-direction:column; gap:10px; margin-top:20px;}
+  .chk-item{ display:flex; gap:12px; align-items:flex-start; background:var(--bg-card); border:1px solid var(--line); border-radius:10px; padding:14px 16px;}
+  .chk-item input{ margin-top:4px; accent-color:var(--teal); width:16px; height:16px; flex-shrink:0;}
+  .chk-item label{ font-size:.9rem; color:var(--text-dim); cursor:pointer;}
+  .chk-item label b{ color:var(--text); }
+
+  /* ---------- FRISE (TIMELINE) ---------- */
+  .frise{ margin-top:24px; }
+  .frise-track{ position:relative; display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:28px; padding:0 6px;}
+  .frise-line{ position:absolute; top:9px; left:6%; right:6%; height:2px; background:var(--line); z-index:0;}
+  .frise-node{ position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:10px; cursor:pointer; flex:1; }
+  .node-dot{ width:20px; height:20px; border-radius:50%; background:var(--bg-card); border:2px solid var(--line); transition:.2s; }
+  .frise-node:hover .node-dot{ border-color:var(--text-faint); }
+  .frise-node.active .node-dot{ background:var(--teal); border-color:var(--teal); box-shadow:0 0 0 4px var(--teal-dim); }
+  .node-label{ font-size:.78rem; text-align:center; color:var(--text-faint); line-height:1.3; transition:.2s; }
+  .frise-node.active .node-label{ color:var(--text); font-weight:600; }
+  .frise-panel{ min-height:60px; }
+  .frise-stage{ display:flex; flex-direction:column; gap:10px; animation:fadeIn .25s ease; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+  @media (max-width:900px){
+    .layout{ grid-template-columns:1fr; }
+    nav.side{ position:static; height:auto; overflow:visible; border-right:none; border-bottom:1px solid var(--line); max-width:none; }
+    .nav-toggle{ display:block; }
+    nav.side.collapsed .brand,
+    nav.side.collapsed ul{ display:none; }
+    main{ padding:32px 20px 80px; }
+    .theme-toggle{ top:auto; bottom:28px; left:28px; right:auto; }
+  }
+  @media (max-width:600px){
+    .frise-line{ left:10%; right:10%; }
+    .node-label{ font-size:.68rem; }
+  }
+
+  footer{ border-top:1px solid var(--line); padding:32px 56px; font-size:.78rem; color:var(--text-faint); }
+  footer .refs{ columns:2; column-gap:40px; font-family:var(--mono); font-size:.72rem; line-height:1.8;}
+
+  /* ---------- QUESTIONNAIRE TABLE ---------- */
+  .q-table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--bg-card); position:relative; }
+  .q-table-wrap::after{ content:''; position:absolute; top:0; right:0; width:36px; height:100%; pointer-events:none;
+    background:linear-gradient(90deg, transparent, var(--bg-card)); opacity:0; transition:opacity .2s; }
+  .q-table-wrap.scrollable::after{ opacity:1; }
+  .q-table{ width:100%; border-collapse:collapse; font-size:.85rem; min-width:560px; }
+  .q-table th{ text-align:left; padding:12px 16px; font-family:var(--mono); font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); border-bottom:1px solid var(--line); }
+  .q-table td{ padding:12px 16px; border-bottom:1px solid var(--line); vertical-align:top; color:var(--text-dim); }
+  .q-table tr:last-child td{ border-bottom:none; }
+  .q-table td:first-child{ white-space:nowrap; }
+  .q-cat{ font-weight:600; font-size:.82rem; }
+  .q-table td:nth-child(2){ color:var(--text); font-weight:600; white-space:nowrap; }
+  .q-vr{ display:inline-block; margin-left:6px; font-family:var(--mono); font-size:.62rem; font-weight:400; color:var(--text-faint); background:var(--bg); border:1px solid var(--line); border-radius:20px; padding:1px 8px; vertical-align:middle; }
+
+  @media (max-width:900px){
+    .layout{ grid-template-columns:1fr; }
+    nav.side{ position:relative; height:auto; border-right:none; border-bottom:1px solid var(--line); }
+    main{ padding:32px 20px 80px; }
+    .card-grid, .triad, .load-bars{ grid-template-columns:1fr 1fr; }
+    footer .refs{ columns:1; }
+  }
+  /* ---------- BLOOM WHEEL ---------- */
+  .bloom-wheel-layout{ display:grid; grid-template-columns:minmax(280px,380px) 1fr; gap:32px; align-items:center; margin-top:24px; }
+  .bloom-wheel-wrap{ position:relative; width:100%; max-width:380px; margin:0 auto; }
+  .bloom-wheel-wrap svg{ width:100%; height:auto; display:block; overflow:visible; }
+  .bloom-seg{ cursor:pointer; transition:opacity .2s, transform .2s, filter .2s; transform-origin:center; }
+  .bloom-seg path{ transition:opacity .2s; }
+  .bloom-seg:focus{ outline:none; }
+  .bloom-seg:focus-visible{ outline:none; filter:drop-shadow(0 0 0 2px var(--teal)) drop-shadow(0 0 0 4px var(--teal)); }
+  .bloom-seg:hover{ opacity:.92; }
+  .bloom-seg.dim{ opacity:.22; }
+  .bloom-seg-label{ font-family:var(--sans); font-size:12px; font-weight:600; fill:var(--text); pointer-events:none; }
+
+  .bloom-detail{ background:var(--bg-card); border:1px solid var(--line); border-left:4px solid var(--bl,var(--line)); border-radius:12px; padding:22px 24px; min-height:190px; transition:border-color .2s; }
+  .bloom-detail .bd-eyebrow{ font-family:var(--mono); font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); margin-bottom:8px; }
+  .bloom-detail h3{ margin:0 0 4px; }
+  .bloom-detail .bd-en{ font-family:var(--mono); font-size:.72rem; color:var(--text-faint); text-transform:uppercase; letter-spacing:.05em; margin-bottom:12px; }
+  .bloom-detail p{ font-size:.92rem; margin:0 0 12px; }
+  .bloom-detail .bd-verbs{ font-family:var(--mono); font-size:.74rem; color:var(--text-faint); border-top:1px solid var(--line); padding-top:12px; }
+  .bloom-detail .bd-verbs b{ color:var(--text-dim); font-weight:500; }
+  @media (max-width:760px){
+    .bloom-wheel-layout{ grid-template-columns:1fr; gap:20px; }
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto;}
+    *{transition:none !important; animation:none !important;}
+    .qa-panel, .qa-btn .caret, .hero-widget, #interp, .fit-badge, .qa-btn,
+    .read-progress, .theme-toggle, .nav-toggle, .to-top, .triad-card, .p-card{ transition:none !important; }
+    .qa-item:hover .qa-panel, .qa-item:focus-within .qa-panel{ transform:none !important; }
+  }
+
+  /* ---------- BIBLIOGRAPHIE (APA 7) ---------- */
+  .reflist{ display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+  .ref-group{ font-family:var(--mono); font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; margin:22px 0 6px; }
+  .ref{ font-size:.86rem; color:var(--text-dim); padding:6px 10px; border-radius:8px; border-left:2px solid var(--line); background:var(--bg-card); }
+  .ref:hover{ border-left-color:var(--teal); }
+  .reflink{ color:var(--teal); text-decoration:none; font-family:var(--mono); font-size:.74rem; border-bottom:1px dotted var(--teal); }
+  .reflink:hover{ color:var(--text); border-bottom-color:var(--text); }
+  .ref.flash{ animation:refFlash 1.1s ease; }
+  @keyframes refFlash{ 0%{ background:var(--teal-dim); border-left-color:var(--teal);} 100%{ background:var(--bg-card);} }
+
+  /* ---------- INSTRUMENTS DE MESURE (cartes cliquables) ---------- */
+  .measure-list{ display:flex; flex-direction:column; gap:10px; margin-top:8px; }
+  .measure{ background:var(--bg-card); border:1px solid var(--line); border-radius:12px; padding:14px 18px; cursor:pointer; transition:border-color .15s, box-shadow .15s; }
+  .measure:hover{ border-color:var(--teal); box-shadow:0 4px 14px rgba(31,158,140,.10); }
+  .measure.open{ border-color:var(--teal); }
+  .measure-head{ display:flex; align-items:center; justify-content:space-between; gap:14px; }
+  .measure-titles{ display:flex; flex-direction:column; gap:2px; }
+  .measure-name{ font-weight:600; font-size:1.05rem; color:var(--text); }
+  .measure-sub{ font-size:.82rem; color:var(--text-faint); }
+  .measure-tag{ font-family:var(--mono); font-size:.64rem; text-transform:uppercase; letter-spacing:.05em; padding:3px 9px; border-radius:20px; color:var(--c); background:color-mix(in srgb, var(--c) 14%, transparent); white-space:nowrap; }
+  .measure-detail{ display:none; margin-top:12px; padding-top:12px; border-top:1px solid var(--line); font-size:.9rem; color:var(--text-dim); }
+  .measure.open .measure-detail{ display:block; }
+  .measure-detail p{ margin:0 0 10px; }
+
+  /* ---------- ACCORDÉON (cartes cognitives / biais) ---------- */
+  .p-card.acc, .p-card.has-detail{ cursor:pointer; }
+  .p-card.acc .p-detail{ display:none; margin-top:8px; padding-top:8px; border-top:1px solid var(--line); color:var(--text-dim); font-size:.88rem; }
+  .p-card.acc.open .p-detail{ display:block; }
+
+  /* ---------- IMPRESSION / EXPORT PDF ---------- */
+  @media print{
+    :root, html, body{ --bg:#fff; --bg-card:#fff; --bg-raised:#fff; --line:#ccc; --text:#000; --text-dim:#222; --text-faint:#555; }
+    .read-progress-track, .read-progress, .to-top, .theme-toggle, .nav-toggle, .skip-link,
+    .callout.idea, .hero-widget input[type=range]{ display:none !important; }
+    .layout{ display:block; max-width:none; }
+    nav.side{ display:none; }
+    main{ padding:0; }
+    section{ margin-bottom:28px; scroll-margin-top:0; page-break-inside:avoid; }
+    .p-card, .triad-card, .camil-step, .chk-item, .callout, .q-table-wrap, .tree-box, .bloom-wheel-layout{
+      page-break-inside:avoid;
+    }
+    /* déplier cartes et détails pour l'impression */
+    .p-card .p-detail{ display:block !important; }
+    .p-card.acc .p-detail{ display:block !important; }
+    .measure-detail{ display:block !important; }
+    .tree-result{ display:block !important; }
+    .tree-actions, .tree-prev, .restart{ display:none !important; }
+    /* la roue de Bloom reste lisible */
+    .bloom-seg-label{ fill:#000; }
+    a{ color:#000; text-decoration:none; }
+    footer .refs{ columns:1; }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Aller au contenu</a>
+<div class="read-progress-track"><div class="read-progress" id="readProgress"></div></div>
+<button class="theme-toggle" id="themeToggle" aria-label="Basculer entre thème clair et sombre"><span class="tt-icon" id="ttIcon">☀</span><span class="tt-label" id="ttLabel">Clair</span></button>
+<div class="layout">
+
+<nav class="side" id="sideNav">
+  <button class="nav-toggle" id="navToggle" aria-label="Afficher / masquer le sommaire" aria-expanded="true">☰ Sommaire</button>
+  <div class="nav-crumb" id="navCrumb" aria-hidden="true">Vous êtes dans : <b id="navCrumbText">Introduction</b></div>
+  <div class="brand">Multimédia & Immersion<small>Fiche de synthèse · recherche</small></div>
+  <ul>
+    <li><a href="#intro">Introduction</a></li>
+    <li class="grp-label">Socle théorique</li>
+    <li><a href="#ctml">CTML — 3 hypothèses</a></li>
+    <li><a href="#principes">12 principes de Mayer</a></li>
+    <li><a href="#charge">Triade de charge cognitive</a></li>
+    <li><a href="#system12">Système 1 / Système 2 (Kahneman)</a></li>
+    <li><a href="#bloom">Taxonomie de Bloom</a></li>
+    <li class="grp-label">Immersion</li>
+    <li><a href="#camil">Modèle CAMIL</a></li>
+    <li><a href="#cognition-immersion">Attention, mémoire, corps</a></li>
+    <li><a href="#biais">Biais cognitifs</a></li>
+    <li><a href="#tension">La tension centrale</a></li>
+    <li><a href="#simulateur">Simulateur interactif</a></li>
+    <li class="grp-label">Application</li>
+    <li><a href="#ux-immersive">UX en environnement immersif</a></li>
+    <li><a href="#arbre">Arbre de décision</a></li>
+    <li><a href="#checklist">Checklist projet XR</a></li>
+    <li><a href="#mesure">Instruments de mesure</a></li>
+    <li><a href="#lectures">Études recommandées</a></li>
+  </ul>
+</nav>
+
+<main id="main-content" tabindex="-1">
+
+  <!-- ============ HERO ============ -->
+  <section id="intro">
+    <div class="eyebrow">Fiche interactive · UX research & psychologie cognitive</div>
+    <h1>Apprentissage multimédia<br>& environnements immersifs</h1>
+    <p class="lede">Mayer (CTML) et Makransky (CAMIL) expliquent comment la charge cognitive et la présence façonnent l'apprentissage — et où ils se contredisent. Cette fiche relie les 12 principes de Mayer, la charge cognitive (intrinsèque / extrinsèque / germane) et le modèle CAMIL, jusqu'à la tension centrale présence contre charge et aux biais qui la masquent. Un simulateur interactif, plus bas, les met en mouvement.</p>
+
+    <div class="quick-access" aria-label="Accès rapide aux grandes parties">
+      <div class="qa-item">
+        <button class="qa-btn" type="button" aria-haspopup="true" aria-expanded="false">Socle théorique <span class="caret"></span></button>
+        <div class="qa-panel">
+          <div class="qa-hint">Choisir une sous-partie</div>
+          <a href="#ctml">CTML — 3 hypothèses</a>
+          <a href="#principes">12 principes de Mayer</a>
+          <a href="#charge">Triade de charge cognitive</a>
+          <a href="#system12">Système 1 / Système 2</a>
+          <a href="#bloom">Taxonomie de Bloom</a>
+        </div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-btn" type="button" aria-haspopup="true" aria-expanded="false">Immersion <span class="caret"></span></button>
+        <div class="qa-panel">
+          <div class="qa-hint">Choisir une sous-partie</div>
+          <a href="#camil">Modèle CAMIL</a>
+          <a href="#cognition-immersion">Attention, mémoire, corps</a>
+          <a href="#biais">Biais cognitifs</a>
+          <a href="#tension">La tension centrale</a>
+          <a href="#simulateur">Simulateur interactif</a>
+        </div>
+      </div>
+      <div class="qa-item">
+        <button class="qa-btn" type="button" aria-haspopup="true" aria-expanded="false">Application <span class="caret"></span></button>
+        <div class="qa-panel">
+          <div class="qa-hint">Choisir une sous-partie</div>
+          <a href="#ux-immersive">UX en environnement immersif</a>
+          <a href="#arbre">Arbre de décision</a>
+          <a href="#checklist">Checklist projet XR</a>
+          <a href="#mesure">Instruments de mesure</a>
+          <a href="#lectures">Lectures recommandées</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CTML ============ -->
+  <section id="ctml">
+    <div class="eyebrow">Socle théorique</div>
+    <h2>La théorie cognitive de l'apprentissage multimédia (CTML)</h2>
+    <p class="section-intro">Mayer construit la CTML sur trois hypothèses issues de la psychologie cognitive, communes à tout support d'apprentissage — écran ou casque VR.</p>
+    <div class="triad">
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false" style="--c:var(--amber)">
+        <h3>Double canal</h3>
+        <p>Information visuelle/spatiale et verbale/auditive traitées par deux canaux séparés en mémoire de travail.</p>
+        <div class="p-detail">
+          <p>Chaque canal a sa propre limite : le visuel gère schéma et espace, l'auditif gère parole et sons. Les associer (image + voix) double la capacité utile ; les empiler sur un seul canal (image + texte lu) la réduit. En VR, une étiquette écrite au-dessus d'un objet 3D oblige ce canal à faire deux tâches à la fois.</p>
+          <p class="triad-practice">→ en pratique : en VR, répartis l'information entre les deux canaux — ne pas saturer le canal visuel avec du texte à lire pendant qu'une animation joue.</p>
+          <p class="triad-source">Paivio (1986) · Baddeley (2000)</p>
+          <p class="triad-link">Principes liés : <a href="#principes">contiguïté spatiale</a>, <a href="#principes">contiguïté temporelle</a>, <a href="#principes">Redondance</a></p>
+        </div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false" style="--c:var(--violet)">
+        <h3>Capacité limitée</h3>
+        <p>Chaque canal ne traite qu'une quantité restreinte d'information à la fois — d'où l'enjeu de la charge cognitive.</p>
+        <div class="p-detail">
+          <p>La mémoire de travail ne retient qu'un nombre restreint d'éléments (Miller, ~4) pendant quelques secondes. Au-delà, le traitement nouveau écrase l'ancien ou reste superficiel. Or la RV ajoute en permanence des éléments à gérer : avatar du corps, menus flottants, déplacement libre, bruit ambiant — chacun consomme une part de la capacité laissée au fond.</p>
+          <p class="triad-practice">→ en pratique : borne le nombre d'éléments à traiter simultanément ; la RV ajoute du monde/des contrôles — chaque ajout coûte de la capacité.</p>
+          <p class="triad-source">Sweller (1988) · Chandler & Sweller (1991)</p>
+          <p class="triad-link">Principes liés : <a href="#principes">cohérence</a>, <a href="#principes">signalisation</a>, <a href="#principes">Redondance</a></p>
+        </div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false" style="--c:var(--teal)">
+        <h3>Traitement actif</h3>
+        <p>Apprendre exige une sélection, organisation et intégration actives de l'information (traitement génératif).</p>
+        <div class="p-detail">
+          <p>Comprendre = relier l'information nouvelle aux connaissances déjà en mémoire à long terme (construction de schémas). Une RV purement « spectacle » laisse le cerveau en mode consommateur : l'élève voit sans construire. L'agentivité (manipuler, décider, expliquer) force ce traitement génératif — c'est le levier que le modèle CAMIL mesure par la présence.</p>
+          <p class="triad-practice">→ en pratique : l'immersion doit faire AGIR l'élève, pas seulement regarder — l'agentivité (CAMIL) alimente ce traitement génératif.</p>
+          <p class="triad-source">Mayer (2009) · Fiorella & Mayer (2015)</p>
+          <p class="triad-link">Principes liés : <a href="#principes">personnalisation</a>, <a href="#principes">Image / incarnation</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 12 PRINCIPLES ============ -->
+  <section id="principes">
+    <div class="eyebrow">Socle théorique</div>
+    <h2>Les 12 principes de Mayer</h2>
+    <p class="section-intro">Regroupés par fonction cognitive. Le nombre de points ambre indique la robustesse relative de l'effet dans les méta-analyses (Mayer & Fiorella) — repère qualitatif, pas une statistique précise. Clique une carte pour déplier le détail.</p>
+
+    <div class="principle-groups">
+
+      <div>
+        <div class="pg-header"><span class="tag reduce">Réduire le traitement superflu</span></div>
+        <div class="card-grid">
+          <div class="p-card" data-dots="3">
+            <div class="p-name">Cohérence</div>
+            <div class="p-gauge"><div class="dots"></div><span class="gauge-label">effet fort</span></div>
+            <div class="p-hint">+ toucher pour détail</div>
+            <div class="p-detail">Exclure mots, images ou sons intéressants mais non essentiels. Chaque élément supplémentaire consomme des ressources sans servir l'objectif pédagogique.</div>
+          </div>
+          <div class="p-card" data-dots="3">
+            <div class="p-name">Signalisation</div>
+            <div class="p-gauge"><div class="dots"></div><span class="gauge-label">effet fort</span></div>
+            <div class="p-hint">+ toucher pour détail</div>
+            <div class="p-detail">Ajouter des repères (flèches, surlignage, titres) qui guident l'attention vers l'information essentielle et sa structure.</div>
+          </div>
+          <div class="p-card" data-dots="2">
+            <div class="p-name">Redondance</div>
+            <div class="p-gauge"><div class="dots"></div><span class="gauge-label">effet modéré</span></div>
+            <div class="p-hint">+ toucher pour détail</div>
+            <div class="p-detail">Éviter de présenter le même texte à l'écran et à l'oral en même temps qu'une image : le canal visuel est alors saturé par la lecture et l'image.</div>
+          </div>
+          <div class="p-card" data-dots="2">
+            <div class="p-name">Contiguïté spatiale</div>
+            <div class="p-gauge"><div class="dots"></div><span class="gauge-label">effet modéré</span></div>
+            <div class="p-hint">+ toucher pour détail</div>
+            <div class="p-detail">Placer le texte près de l'élément graphique qu'il décrit, pour éviter une recherche visuelle coûteuse (effet d'attention partagée).</div>
+          </div>
+          <div class="p-card" data-dots="2">
+            <div class="p-name">Contiguïté temporelle</div>
+            <div class="p-gauge"><div class="dots"></div><span class="gauge-label">effet modéré</span></div>
+            <div class="p-hint">+ toucher pour détail</div>
+            <div class="p-detail">Présenter narration et animation correspondantes simultanément plutôt que successivement.</div>
+          </div>
+          <div class="p-card" data-dots="3">
+            <div class="p-name">Segmentation</div>
+            <div class="p-gauge"><div class="dots"></div><span class="gauge-label">effet fort</span></div>
+            <div class="p-hint">+ toucher pour détail</div>
+            <div class="p-detail">Découper une leçon continue en segments courts contrôlés par l'apprenant, plutôt qu'une unité continue imposée.</div>
+          </div>
+          <div class="p-card" data-dots="2">
+            <div class="p-name">Pré-entraînement</div>
+            <div class="p-gauge"><div class="dots"></div><span class="gauge-label">effet modéré</span></div>
+            <div class="p-hint">+ toucher pour détail</div>
+            <div class="p-detail">Enseigner en amont le nom et les caractéristiques des concepts clés, pour libérer des ressources lors de l'apprentissage principal — particulièrement pertinent en VR pour dissocier la découverte de l'interface de l'apprentissage du contenu.</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="pg-header"><span class="tag manage">Gérer le traitement essentiel</span></div>
+        <p style="font-size:.85rem; color:var(--text-faint); margin:-6px 0 12px; max-width:640px;">Ce groupe est volontairement resserré : chez Mayer, la <b>modalité</b> est le principe central de gestion du traitement essentiel. La segmentation et le pré-entraînement (classés ici « réduire ») y contribuent aussi selon les éditions — la taxonomie répartit l'effort, elle ne le distribue pas à parts égales.</p>
+        <div class="card-grid">
+          <div class="p-card" data-dots="3">
+            <div class="p-name">Modalité</div>
+            <div class="p-gauge"><div class="dots"></div><span class="gauge-label">effet fort</span></div>
+            <div class="p-hint">+ toucher pour détail</div>
+            <div class="p-detail">Préférer une narration orale à un texte écrit pour accompagner une animation : cela répartit la charge entre les deux canaux au lieu de surcharger le canal visuel.</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="pg-header"><span class="tag foster">Favoriser le traitement génératif</span></div>
+        <div class="card-grid">
+          <div class="p-card" data-dots="3">
+            <div class="p-name">Multimédia</div>
+            <div class="p-gauge"><div class="dots"></div><span class="gauge-label">effet fort</span></div>
+            <div class="p-hint">+ toucher pour détail</div>
+            <div class="p-detail">Les gens apprennent mieux avec des mots et des images qu'avec des mots seuls — à condition que l'image soit pertinente et bien intégrée.</div>
+          </div>
+          <div class="p-card" data-dots="2">
+            <div class="p-name">Personnalisation</div>
+            <div class="p-gauge"><div class="dots"></div><span class="gauge-label">effet modéré</span></div>
+            <div class="p-hint">+ toucher pour détail</div>
+            <div class="p-detail">Un style conversationnel et des personnages/agents pédagogiques favorisent l'engagement et le traitement actif, sans excès (l'effet peut s'inverser si l'agent distrait).</div>
+          </div>
+          <div class="p-card" data-dots="1">
+            <div class="p-name">Voix</div>
+            <div class="p-gauge"><div class="dots"></div><span class="gauge-label">effet faible/mixte</span></div>
+            <div class="p-hint">+ toucher pour détail</div>
+            <div class="p-detail">Une voix humaine amicale est souvent préférée à une voix synthétique, mais l'effet mesuré sur l'apprentissage reste inconsistant selon les études.</div>
+          </div>
+          <div class="p-card" data-dots="2">
+            <div class="p-name">Image / incarnation</div>
+            <div class="p-gauge"><div class="dots"></div><span class="gauge-label">effet modéré</span></div>
+            <div class="p-hint">+ toucher pour détail</div>
+            <div class="p-detail">Des agents pédagogiques incarnés, avec gestes et regard socialement congruents, renforcent le sentiment de présence sociale et l'engagement — un pont direct avec les avatars en VR.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ CHARGE COGNITIVE ============ -->
+  <section id="charge">
+    <div class="eyebrow">Socle théorique</div>
+    <h2>La triade de charge cognitive</h2>
+    <p class="section-intro">Les principes de Mayer visent tous, in fine, à équilibrer ces trois formes de charge en mémoire de travail (Sweller ; Paas & van Merriënboer).</p>
+    <div class="triad">
+      <div class="triad-card" style="--c:var(--text-faint)">
+        <h3>Intrinsèque</h3>
+        <p>Liée à la complexité inhérente du contenu et à l'interactivité des éléments à traiter simultanément. Réductible seulement en re-séquençant le contenu (segmentation, pré-entraînement).</p>
+      </div>
+      <div class="triad-card" style="--c:var(--red-soft)">
+        <h3>Extrinsèque</h3>
+        <p>Générée par une mauvaise conception : interface confuse, éléments non pertinents, navigation coûteuse. C'est la cible principale des principes de réduction de Mayer — et le principal risque en VR non maîtrisée.</p>
+      </div>
+      <div class="triad-card" style="--c:var(--teal)">
+        <h3>Germane</h3>
+        <p>Ressources investies dans l'organisation et l'intégration du sens : c'est la charge « utile ». L'objectif de conception est de la maximiser en libérant de la place par ailleurs.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SYSTEME 1 / SYSTEME 2 ============ -->
+  <section id="system12">
+    <div class="eyebrow">Socle théorique</div>
+    <h2>Système 1 / Système 2 (Kahneman) — le coût de la réflexion</h2>
+    <p class="section-intro">Kahneman (2011 <a class="reflink" href="#ref-kahneman-2011">↗</a>) distingue deux modes de traitement. Relier les deux à la charge cognitive éclaire pourquoi une interface mal conçue empêche l'apprentissage profond, et pourquoi l'immersion peut tromper.</p>
+    <div class="triad">
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false" style="--c:var(--amber);">
+        <h3>Système 1 — rapide, intuitif</h3>
+        <p>Automatique, peu coûteux en charge, mais sujet aux biais. En VR, la présence et l'incarnation le mobilisent en continu : l'expérience paraît fluide et « vraie » sans effort délibéré.</p>
+        <div class="p-detail">Il fonctionne par associations et heuristiques (ancrage, disponibilité) : c'est lui que sollicitent les biais de ta section « Biais cognitifs » (effet Protée, illusion de compétence). Utile pour l'engagement, risqué pour l'apprentissage si on le laisse seul juge.</div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false" style="--c:var(--violet);">
+        <h3>Système 2 — lent, délibératif</h3>
+        <p>Contrôlé, exigeant pour la mémoire de travail. C'est lui qui soutient le traitement génératif de Mayer. S'il est saturé par la charge extrinsèque (interface, nouveauté), l'apprentissage profond n'a plus de ressources.</p>
+        <div class="p-detail">Un Système 2 surchargé se « focalise » : c'est le même mécanisme que l'attention tunnel décrit par Wickens (2008 <a class="reflink" href="#ref-wickens-2008">↗</a>) — en champ de vision libre, l'attention se verrouille sur un canal au détriment du reste. D'où l'importance de la signalisation pour guider ce traitement lent.</div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false" style="--c:var(--teal);">
+        <h3>Le pont avec l'immersion</h3>
+        <p>La RV engage d'abord le Système 1 : l'apprenant confond fluidité et compréhension (illusion de compétence). Libérer de la charge extrinsèque, c'est laisser de la place au Système 2 — condition de l'apprentissage factuel.</p>
+        <div class="p-detail">Ce point rejoint directement la tension présence / charge cognitive (section « Tension centrale ») : plus l'immersion est riche, plus le Système 1 est sollicité — et plus il faut d'aménagements (pré-entraînement, signalisation) pour laisser au Système 2 la place de traiter le fond.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TAXONOMIE DE BLOOM ============ -->
+  <section id="bloom">
+    <div class="eyebrow">Socle théorique</div>
+    <h2>La taxonomie de Bloom (révisée)</h2>
+    <p class="section-intro">Là où la CTML décrit <i>comment</i> l'esprit traite l'information, la taxonomie de Bloom classe <i>quel type</i> d'objectif cognitif on vise. Formuler l'objectif d'apprentissage avant de choisir le dispositif (2D ou immersif) évite de mobiliser un dispositif immersif coûteux là où un simple support suffirait pour un objectif de mémorisation.</p>
+
+    <p style="font-size:.85rem; color:var(--text-faint); max-width:660px; margin-bottom:6px;">Version révisée par Anderson &amp; Krathwohl (2001), qui reformule les six catégories de Bloom (1956) en verbes d'action et place « Créer » comme le processus le plus intégrateur. Elles sont présentées ici <b>en roue, sans sommet ni base</b> : un rappel visuel qu'il ne s'agit pas d'un escalier à gravir mais de six processus cognitifs que l'on combine.</p>
+
+    <div class="bloom-wheel-layout">
+      <div class="bloom-wheel-wrap">
+        <svg viewBox="0 0 320 320" role="img" aria-label="Roue des six processus cognitifs de la taxonomie de Bloom révisée">
+          <g id="bloomSegs"></g>
+        </svg>
+      </div>
+
+      <div class="bloom-detail" id="bloomDetail">
+        <div class="bd-eyebrow">Processus cognitif</div>
+        <h3 id="bdName">Une palette, pas un escalier</h3>
+        <div class="bd-en" id="bdEn">Anderson &amp; Krathwohl, 2001</div>
+        <p id="bdDesc">Les six catégories sont souvent citées dans l'ordre <i>Mémoriser → Créer</i>, mais cet ordre indique une complexité cognitive croissante, pas une séquence obligatoire. Selon l'objectif, on peut entrer par n'importe quelle catégorie — et une tâche authentique en mobilise généralement plusieurs à la fois.</p>
+        <div class="bd-verbs" id="bdVerbs"><b>Sélectionne un segment de la roue pour voir sa définition et ses verbes d'action.</b></div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <b>Le piège de la « pyramide » —</b> la représentation pyramidale popularisée n'est pas de Bloom lui-même et suggère à tort qu'il faut « épuiser » les niveaux bas avant d'aborder les hauts. Anderson &amp; Krathwohl <a class="reflink" href="#ref-anderson-2001">↗</a> insistent : les niveaux se recouvrent et un apprentissage authentique mobilise souvent plusieurs niveaux en même temps.
+    </div>
+
+    <div class="callout good">
+      <b>Lien avec l'immersion —</b> l'apport propre de la RV (agentivité, incarnation, transfert spatial) se situe surtout aux niveaux <i>Appliquer</i> et <i>Analyser</i> en contexte réaliste. Pour <i>Mémoriser</i> ou <i>Comprendre</i> un contenu simple, un support 2D bien conçu (principes de Mayer) atteint souvent le même objectif à moindre coût — d'où l'intérêt de fixer le niveau de Bloom visé <i>avant</i> l'arbre de décision plus bas.
+    </div>
+  </section>
+
+  <!-- ============ CAMIL ============ -->
+  <section id="camil">
+    <div class="eyebrow">Recherche sur l'immersion</div>
+    <h2>Le modèle CAMIL (Makransky &amp; Petersen, 2021 <a class="reflink" href="#ref-makransky-2021">↗</a>)</h2>
+    <p class="section-intro">Le <i>Cognitive Affective Model of Immersive Learning</i> prolonge la CTML pour les environnements immersifs (RV, digital twins). Il ajoute deux affordances propres à l'immersion : la présence et l'agentivité.</p>
+    <div class="camil-flow">
+      <div class="camil-step">
+        <h4>Affordances</h4>
+        <p>Immersion (champ de vision, sensoriel), contrôle/agentivité, incarnation via avatar.</p>
+      </div>
+      <div class="camil-arrow">→</div>
+      <div class="camil-step">
+        <h4>États psychologiques</h4>
+        <p>Sentiment de présence, agentivité perçue, motivation intrinsèque et intérêt situationnel.</p>
+      </div>
+      <div class="camil-arrow">→</div>
+      <div class="camil-step">
+        <h4>Processus cognitifs</h4>
+        <p>Traitement génératif favorisé par la présence — mais charge extrinsèque accrue par la nouveauté technique et la richesse sensorielle.</p>
+      </div>
+      <div class="camil-arrow">→</div>
+      <div class="camil-step">
+        <h4>Résultats</h4>
+        <p>Apprentissage factuel, procédural, transfert spatial — modéré par les objectifs pédagogiques, l'intérêt et les capacités d'autorégulation.</p>
+      </div>
+    </div>
+    <p style="font-size:.88rem;">Le modèle explique pourquoi la RV immersive peut, dans une même étude, générer davantage de présence et de motivation tout en produisant un apprentissage factuel équivalent ou inférieur à un support 2D (Makransky, Terkildsen & Mayer, 2019) : les bénéfices motivationnels et les coûts de charge cognitive coexistent.</p>
+  </section>
+
+  <!-- ============ SIMULATEUR INTERACTIF ============ -->
+  <section id="simulateur">
+    <div class="eyebrow">Synthèse interactive</div>
+    <h2>Charge cognitive & présence : le simulateur</h2>
+    <p class="section-intro">Les concepts rencontrés plus haut — charge cognitive (Sweller/Mayer), 12 principes de Mayer, et présence CAMIL (Makransky) — se rejoignent ici. Déplace les curseurs pour voir comment la charge se redistribue entre un écran 2D et un environnement immersif, et ce que devient la présence.</p>
+
+    <div class="hero-widget">
+      <div class="load-bar" id="loadStack" role="img" aria-label="Répartition de la charge cognitive totale">
+        <div class="load-seg seg-intr" id="segIntrinsic"><span class="seg-tag" id="tagIntrinsic"><span class="t-label">Intrinsèque</span><span class="t-val">30 %</span></span></div>
+        <div class="load-seg seg-extr" id="segExtrinsic"><span class="seg-tag" id="tagExtrinsic"><span class="t-label">Extrinsèque</span><span class="t-val">12 %</span></span></div>
+        <div class="load-seg seg-germ" id="segGermane"><span class="seg-tag" id="tagGermane"><span class="t-label">Germane</span><span class="t-val">58 %</span></span></div>
+      </div>
+
+      <div class="load-readout">
+        <div class="presence-block">
+          <div class="pm-head"><span>Présence / agentivité — bénéfice CAMIL</span><b id="valPresence">0%</b></div>
+          <div class="pm-track tall"><div class="pm-fill" id="barPresence"></div></div>
+        </div>
+        <span class="fit-badge ok" id="fitBadge" tabindex="0" data-tip="Confortable : la charge est équilibrée et la présence mobilisée. Déplace les curseurs pour voir les autres verdicts.">Confortable</span>
+        <div class="load-legend">
+          <span><i class="dot intr"></i>Intrinsèque <b id="valIntrinsic">30%</b></span>
+          <span><i class="dot extr"></i>Extrinsèque <b id="valExtrinsic">12%</b></span>
+          <span><i class="dot germ"></i>Germane (place utile) <b id="valGermane">58%</b></span>
+        </div>
+      </div>
+
+      <div class="sliders-row">
+        <div class="slider-cell">
+          <div class="axis-labels sm">
+            <span class="lo">← 2D (écran)</span>
+            <span class="hi">RV immersive →</span>
+          </div>
+          <input type="range" id="immersionSlider" min="0" max="100" value="20"
+            aria-label="Niveau d'immersion du dispositif, de 0 (multimédia 2D) à 100 (réalité virtuelle immersive)"
+            aria-valuemin="0" aria-valuemax="100" aria-valuenow="20" aria-valuetext="Immersion faible (multimédia 2D)">
+        </div>
+        <div class="slider-cell">
+          <div class="axis-labels sm">
+            <span class="lo2">← Conception pauvre</span>
+            <span class="hi2">maîtrisée →</span>
+          </div>
+          <input type="range" id="designSlider" min="0" max="100" value="60"
+            aria-label="Qualité de conception et de pilotage de la charge cognitive, de 0 (non maîtrisée) à 100 (maîtrisée : signalisation, pré-entraînement, cohérence, modalité)"
+            aria-valuemin="0" aria-valuemax="100" aria-valuenow="60" aria-valuetext="Conception moyennement maîtrisée">
+        </div>
+      </div>
+
+      <p class="tube-note">La charge cognitive consomme la <b>capacité de la mémoire de travail (100 %)</b>. L'<b>intrinsèque</b> dépend de l'interactivité des éléments à traiter simultanément (Sweller) : <b>30 % en 2D</b>, jusqu'à <b>42 % en RV haute fidélité</b> (la RV empile plus d'éléments à gérer à la fois). L'<b>extrinsèque</b> monte avec l'immersion (nouveauté, richesse sensorielle) et se réduit par la conception — <b>plancher 8 %</b> (coût de nouveauté irréductible). La <b>germane</b> est ce qu'il reste. Le <b>seuil d'alerte à 40 % de germane utile</b> est signalé par la pastille « ⚠ » dans la légende : sous ce niveau, l'apprentissage est en risque. En RV <b>mal conçue</b> (q=0), l'extrinsèque grimpe (~45 %), la germane s'effondre (~13 %) et la présence avec (~14 %) ; une conception <b>maîtrisée</b> (q=100) la redresse — germane ~50 %, présence ~90 %.</p>
+
+      <div id="interp"></div>
+      <p style="font-family:var(--mono); font-size:.68rem; color:var(--text-faint); margin:14px 0 0; text-align:right;">Valeurs illustratives — schématisent une tendance documentée, ne sont pas des mesures empiriques.</p>
+    </div>
+  </section>
+
+  <!-- ============ COGNITION EN IMMERSION ============ -->
+  <section id="cognition-immersion">
+    <div class="eyebrow">Recherche sur l'immersion</div>
+    <h2>Ce que l'immersion change dans le traitement cognitif</h2>
+    <p class="section-intro">Au-delà de la charge globale, trois processus cognitifs se comportent différemment en environnement immersif qu'à l'écran — avec des implications directes pour la conception d'un simulateur.</p>
+
+    <div class="card-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); margin-bottom:22px;">
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false">
+        <div class="p-name">Attention — le risque de tunnel attentionnel</div>
+        <div class="p-def">En champ de vision libre, l'attention se fixe sur un canal — la signalisation compte plus qu'à l'écran.</div>
+        <div class="p-detail">
+          En 2D, le concepteur contrôle presque entièrement ce qui entre dans le champ visuel. En VR, le champ de vision libre déplace ce contrôle vers l'apprenant : l'attention peut se fixer sur un canal ou un objectif au détriment du reste — le phénomène d'<i>attentional tunneling</i> décrit par Wickens <a class="reflink" href="#ref-wickens-2008">↗</a>. La théorie de la charge perceptive (Lavie <a class="reflink" href="#ref-lavie-2005">↗</a>) prédit qu'un environnement visuellement riche épuise plus vite les ressources disponibles pour filtrer les distracteurs, rendant la signalisation (repères, contraste, son spatialisé) plus déterminante qu'à l'écran, pas moins.
+        </div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false">
+        <div class="p-name">Mémoire de travail — un canal spatial déjà occupé</div>
+        <div class="p-def">Superposer spatial (3D) et verbal complexe épuise la même ressource limitée.</div>
+        <div class="p-detail">
+          Le modèle de Baddeley attribue la navigation et la manipulation d'objets 3D au calepin visuo-spatial — le même sous-système que celui sollicité par les diagrammes et animations en 2D. Cela prédit un coût en double tâche : superposer des informations spatiales (déplacement libre, manipulation d'objets) et verbales complexes (instructions denses) revient à faire concourir deux traitements pour la même ressource limitée, au détriment de l'un ou de l'autre.
+        </div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false">
+        <div class="p-name">Cognition incarnée — le corps comme outil de raisonnement</div>
+        <div class="p-def">Le geste et le mouvement structurent la compréhension, pas seulement son contenu.</div>
+        <div class="p-detail">
+          La cognition incarnée (Barsalou <a class="reflink" href="#ref-barsalou-2008">↗</a> ; Kilteni et al. <a class="reflink" href="#ref-kilteni-2012">↗</a> sur le « sense of embodiment ») propose que les interactions physiques structurent directement le raisonnement, pas seulement son contenu. Des recherches sur des systèmes de cognition spatiale incarnée montrent que les apprenants transforment le mouvement corporel en raisonnement proportionnel (« utiliser son corps pour mesurer une distance »). Une étude comparant exploration en VR immersive et exploration sur carte 2D trouve un résultat asymétrique intéressant : la VR favorise le jugement de direction relative entre objets, tandis que la carte favorise l'orientation cardinale et une représentation allocentrique — deux formats de connaissance spatiale complémentaires, pas équivalents.
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <b>Confusion fréquente à éviter —</b> une partie des effets attribués à la « charge cognitive de l'immersion » dans les études de terrain est en réalité confondue avec le mal des simulateurs (cybersickness) et l'inconfort du matériel. Avant d'attribuer une baisse de performance à un traitement cognitif, il est recommandé de mesurer séparément le confort (ex. Simulator Sickness Questionnaire) et la charge perçue.
+    </div>
+  </section>
+
+  <!-- ============ BIAIS COGNITIFS ============ -->
+  <section id="biais">
+    <div class="eyebrow">Recherche sur l'immersion</div>
+    <h2>Biais cognitifs propres aux contextes immersifs</h2>
+    <p class="section-intro">L'immersion n'ajoute pas seulement de la charge : elle active des biais qui n'ont pas d'équivalent net à l'écran, ou qui y sont beaucoup plus faibles. Utile à connaître autant pour concevoir que pour interpréter des résultats d'évaluation.</p>
+
+    <div class="card-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); margin-bottom:22px;">
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false">
+        <div class="p-name">Illusion de compétence (écart subjectif/objectif)</div>
+        <div class="p-def">Ce qui se vit « fluide » en VR se confond avec ce qui est réellement appris.</div>
+        <div class="p-detail">
+          Plusieurs études rapportent que les apprenants en RV immersive évaluent leur propre apprentissage plus favorablement que des apprenants sur écran, alors que les mesures objectives de performance sont équivalentes ou inférieures. La présence et l'engagement sont confondus avec l'apprentissage réel — un cas particulier du biais de fluence métacognitive (Bjork <a class="reflink" href="#ref-bjork-1994">↗</a>) : ce qui se vit de façon fluide et immersive « semble » mieux appris.
+        </div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false">
+        <div class="p-name">Effet Protée (Proteus effect)</div>
+        <div class="p-def">Les traits de l'avatar modifient la cognition de la personne qui l'incarne.</div>
+        <div class="p-detail">
+          Yee & Bailenson (2007) <a class="reflink" href="#ref-yee-2007">↗</a> montrent que les traits perçus d'un avatar modifient le comportement et la cognition de la personne qui l'incarne — par exemple une meilleure performance à des tâches cognitives en incarnant un avatar associé à la compétence ou à l'expertise. Effet exploitable en conception (avatar « expert » pour une simulation professionnelle) mais à double tranchant : un avatar porteur de stéréotypes négatifs peut aussi induire des comportements ou biais indésirables.
+        </div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false">
+        <div class="p-name">Détails séduisants & biais de fluence</div>
+        <div class="p-def">Un environnement riche paraît pédagogique, même s'il ne l'est pas.</div>
+        <div class="p-detail">
+          Extension du principe de cohérence de Mayer : un environnement visuellement riche est spontanément jugé plus « pédagogique » qu'un environnement sobre, indépendamment de l'apprentissage réel qu'il produit. Le réflexe d'enrichir sensoriellement un environnement immersif pour le rendre convaincant va souvent à l'encontre de l'objectif pédagogique.
+        </div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false">
+        <div class="p-name">Confiance excessive envers le modèle simulé (automation bias)</div>
+        <div class="p-def">Le réalisme de l'interface nourrit une confiance démesurée dans le modèle.</div>
+        <div class="p-detail">
+          Dans les jumeaux numériques utilisés pour la prise de décision (maintenance prédictive, diagnostic, planification), la richesse visuelle et l'impression de contrôle en temps réel peuvent renforcer une confiance disproportionnée dans les sorties du modèle sous-jacent — un biais d'automatisation classique en ergonomie cognitive (Parasuraman & Manzey, 2010 <a class="reflink" href="#ref-parasuraman-2010">↗</a>), amplifié par le réalisme perceptif de l'interface plutôt que par la validité réelle du modèle.
+        </div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false">
+        <div class="p-name">Distorsion du jugement de risque</div>
+        <div class="p-def">Une expérience vive surestime la fréquence perçue d'un risque rare.</div>
+        <div class="p-detail">
+          Une expérience immersive vive (accident simulé, incident critique) peut, par heuristique de disponibilité, faire surestimer la fréquence perçue d'un événement rare après coup — un effet recherché en formation à la sécurité, mais qui doit être calibré pour ne pas produire une anxiété ou une estimation de risque disproportionnée.
+        </div>
+      </div>
+    </div>
+
+    <div class="callout good">
+      <b>Implication pour l'évaluation —</b> ne jamais se fier uniquement à l'auto-évaluation du sentiment d'apprentissage en sortie d'expérience immersive : la mesurer séparément d'un indicateur de performance objectif est la seule façon de distinguer un vrai gain pédagogique d'une illusion de compétence.
+    </div>
+  </section>
+
+  <!-- ============ TENSION ============ -->
+  <section id="tension">
+    <div class="eyebrow">Recherche sur l'immersion</div>
+    <h2>La tension centrale : présence vs charge cognitive</h2>
+    <p class="section-intro">Le point de friction principal entre CTML et recherche sur l'immersion tient à un constat robuste et réplicable dans <a href="#lectures">plusieurs travaux récents</a> (voir la section Études).</p>
+    <div class="callout">
+      <b>Constat récurrent —</b> les environnements très immersifs augmentent fréquemment la charge extrinsèque (fidélité graphique, richesse sensorielle, nouveauté de l'interface), ce qui peut réduire l'apprentissage factuel même quand la présence et la motivation augmentent (Parong & Mayer, 2018 ; Makransky et al., 2019).
+    </div>
+    <div class="callout good">
+      <b>Nuance importante —</b> une bonne partie de ce surcoût cognitif est attribuable à <i>l'effet de nouveauté</i> plutôt qu'à l'immersion elle-même : un pré-entraînement à la manipulation de l'environnement RV (contrôles, déplacement, interface) réduit la charge extrinsèque et améliore l'apprentissage lors de sessions ultérieures (recherche 2024 sur le pré-entraînement en RV).
+    </div>
+    <div class="callout good">
+      <b>Où l'immersion l'emporte —</b> pour les apprentissages procéduraux, psychomoteurs, spatiaux ou nécessitant un transfert vers un contexte réel (gestes chirurgicaux, procédures industrielles, exploration 3D), l'agentivité et l'incarnation apportent un bénéfice que le 2D ne peut pas reproduire — c'est précisément le terrain des simulateurs et jumeaux numériques pédagogiques.
+    </div>
+  </section>
+
+  <!-- ============ UX IMMERSIVE ============ -->
+  <section id="ux-immersive">
+    <div class="eyebrow">Application pratique</div>
+    <h2>UX en environnement immersif</h2>
+    <p class="section-intro">Les heuristiques classiques (Nielsen) restent utiles mais insuffisantes en 3D : elles ne couvrent ni la manipulation d'objets dans l'espace, ni la navigation, ni l'interprétation du changement dans un monde virtuel. Un cadre adapté distingue en général deux couches d'apprentissage à traiter séparément.</p>
+
+    <div class="triad">
+      <div class="triad-card" style="--c:var(--amber)">
+        <h3>L1 — Apprentissage de l'interface</h3>
+        <p>Comprendre les contrôles, la navigation, les gestes disponibles. Tant que L1 n'est pas automatisé, il consomme des ressources qui devraient servir L2 — d'où l'importance du pré-entraînement dissocié.</p>
+      </div>
+      <div class="triad-card" style="--c:var(--teal)">
+        <h3>L2 — Apprentissage conceptuel/procédural</h3>
+        <p>Le contenu pédagogique visé. Une évaluation qui ne distingue pas L1 de L2 risque d'attribuer à tort un échec de compréhension à un simple problème d'interface non maîtrisée.</p>
+      </div>
+      <div class="triad-card" style="--c:var(--violet)">
+        <h3>Confort & ergonomie</h3>
+        <p>Mal des simulateurs, fatigue oculaire, poids et ajustement du casque : des facteurs non cognitifs qui interagissent directement avec l'attention disponible pour L1 et L2.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:30px;">Principes de conception (issus des méta-analyses & synthèses)</h3>
+    <p class="section-intro" style="margin-bottom:16px;">Six recommandations actionnables, chacune tracée à une étude vérifiée (voir <a href="#lectures">Études recommandées</a>). Clique sur une carte pour le détail et la source.</p>
+
+    <div class="card-grid" style="grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:14px;">
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false" style="--c:var(--teal);">
+        <div class="p-name">Interactivité &gt; immersion seule</div>
+        <div class="p-def">C'est l'interaction (pas l'immersion visuelle) qui drive l'apprentissage, via le sentiment d'agentivité.</div>
+        <div class="p-detail">
+          Petersen &amp; Makransky (2022) testent le CAMIL : l'immersion augmente la charge extrinsèque, mais c'est <b>l'interactivité</b> (via l'agentivité perçue) qui prédit l'apprentissage. Concevoir pour que l'apprenant <i>fasse</i>, pas seulement subisse — donner le contrôle des actions et du rythme. <a class="reflink" href="#ref-petersen-2022">↗</a>
+        </div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false" style="--c:var(--red-soft);">
+        <div class="p-name">Borner la charge extrinsèque dès la conception</div>
+        <div class="p-def">L'IVR ajoute une charge extrinsèque réelle (navigation, corps virtuel, nouveauté).</div>
+        <div class="p-detail">
+          Makransky &amp; Petersen (2021, CAMIL) et Juliano et al. (2022) montrent que la charge cognitive <b>augmente</b> en HMD-VR. Utiliser les principes CTML (cohérence, signalisation, segmentation, pré-entraînement) pour ne pas saturer la mémoire de travail. <a class="reflink" href="#ref-makransky-2021">↗</a> <a class="reflink" href="#ref-juliano-2022">↗</a>
+        </div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false" style="--c:var(--amber);">
+        <div class="p-name">Dosage de l'immersion (rendements décroissants)</div>
+        <div class="p-def">Au-delà d'un seuil, plus d'immersion n'ajoute pas de présence.</div>
+        <div class="p-detail">
+          Cummings &amp; Bailenson (2016, méta-analyse) : le niveau d'immersion influence la présence avec des <b>rendements décroissants</b>. Au-delà d'un seuil, investir le surplus dans la pédagogie plutôt que dans le réalisme. <a class="reflink" href="#ref-cummings-2016">↗</a>
+        </div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false" style="--c:var(--violet);">
+        <div class="p-name">Apprentissage génératif, pas exposition passive</div>
+        <div class="p-def">La RV seule augmente l'adhésion mais pas la mémorisation brute.</div>
+        <div class="p-detail">
+          Makransky et al. (2019) montrent que l'IVR surpasse le manuel aux tests de <b>transfert</b> (d ≈ 0,54–0,57) mais pas à la mémorisation déclarative. Exiger que l'apprenant prédise, explique, résolve dans l'environnement. <a class="reflink" href="#ref-makransky-2019b">↗</a> <a class="reflink" href="#ref-makransky-2019">↗</a>
+        </div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false" style="--c:var(--green-soft);">
+        <div class="p-name">Mesurer &amp; concevoir pour le confort</div>
+        <div class="p-def">La sickness détruit la présence et l'apprentissage.</div>
+        <div class="p-detail">
+          Rebenitsch &amp; Owen (2016, revue) recensent les déclencheurs (latence, FOV, vélocité, discordance visuo-vestibulaire). Limiter ces facteurs et administrer le SSQ (Kennedy et al., 1993) — la sickness consomme l'attention disponible. <a class="reflink" href="#ref-rebenitsch-2016">↗</a> <a class="reflink" href="#ref-kennedy-1993">↗</a>
+        </div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false" style="--c:#4db6e6;">
+        <div class="p-name">Ne pas sur-promettre l'effet global</div>
+        <div class="p-def">Viser les tâches où la RV a un avantage démontré.</div>
+        <div class="p-detail">
+          Wu et al. (2020, ES = 0,24) et Çoban et al. (2022, g = 0,38) : effet <b>petit mais positif</b>, plus marqué pour la capacité spatiale / procédurale que pour la mémorisation déclarative. Cibler ces tâches plutôt que le déclaratif brut. <a class="reflink" href="#ref-wu-2020">↗</a> <a class="reflink" href="#ref-coban-2022">↗</a> <a class="reflink" href="#ref-radianti-2020">↗</a>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:30px;">Points de vigilance issus des heuristiques VR/XR adaptées</h3>
+    <div class="card-grid" style="grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:14px;">
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false" style="--c:var(--teal);">
+        <div class="p-name">Interface diégétique en priorité</div>
+        <div class="p-def">Intégrer les indications dans le monde (panneaux, objets, sons spatialisés) plutôt qu'en overlay 2D flottant.</div>
+        <div class="p-detail">
+          Un overlay 2D flottant casse la cohérence spatiale et ajoute de la charge extrinsèque. Nielsen (2020) recommande en VR de maintenir la correspondance système–monde et d'éviter les éléments hors-monde. <a class="reflink" href="#ref-nielsen-2020">↗</a> <a class="reflink" href="#ref-sutcliffe-2004">↗</a>
+        </div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false" style="--c:var(--violet);">
+        <div class="p-name">Repères de profondeur explicites</div>
+        <div class="p-def">Ombres portées, occlusion, échelle familière : sans eux, l'estimation des distances en 3D est peu fiable.</div>
+        <div class="p-detail">
+          L'absence de repères coûte des ressources attentionnelles et dégrade la perception spatiale — un facteur de charge extrinsèque évitable (Sutcliffe &amp; Gault, 2004). <a class="reflink" href="#ref-sutcliffe-2004">↗</a>
+        </div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false" style="--c:var(--amber);">
+        <div class="p-name">Faible latence de mouvement (motion-to-photon)</div>
+        <div class="p-def">Un délai perceptible entre le mouvement réel et son rendu est une source directe d'inconfort.</div>
+        <div class="p-detail">
+          La latence nourrit le cybersickness et la charge, indépendamment de la qualité pédagogique (Rebenitsch &amp; Owen, 2016). Viser &lt; 20 ms de motion-to-photon. <a class="reflink" href="#ref-rebenitsch-2016">↗</a> <a class="reflink" href="#ref-jerald-2015">↗</a>
+        </div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false" style="--c:var(--red-soft);">
+        <div class="p-name">Visibilité de l'état du système</div>
+        <div class="p-def">Signaler qu'une action a bien été prise en compte (saisie, validation), en l'absence de retour tactile.</div>
+        <div class="p-detail">
+          Retranscrire l'heuristique de Nielsen en 3D : retour visuel ou sonore sur chaque action. En VR, l'absence de retour tactile naturel rend ce signal d'autant plus crucial. <a class="reflink" href="#ref-nielsen-2020">↗</a> <a class="reflink" href="#ref-sutcliffe-2004">↗</a>
+        </div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false" style="--c:var(--green-soft);">
+        <div class="p-name">Évaluation par cheminement cognitif 3D</div>
+        <div class="p-def">Un passage structuré tâche par tâche détecte des problèmes invisibles aux heuristiques 2D.</div>
+        <div class="p-detail">
+          Le « cognitive walkthrough » adapté à la navigation et à la manipulation spatiale complète la grille heuristique classique (Sutcliffe &amp; Gault, 2004). <a class="reflink" href="#ref-sutcliffe-2004">↗</a>
+        </div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false" style="--c:#4db6e6;">
+        <div class="p-name">Cohérence des gestes & standards</div>
+        <div class="p-def">Conventions de gestes homogènes (préhension, validation, déplacement) d'une tâche à l'autre.</div>
+        <div class="p-detail">
+          Des contrôles incohérents obligent à recharger la mémoire de travail en permanence (Jakob's law, heuristique #4 de Nielsen). Uniformiser les interactions réduit la charge utile. <a class="reflink" href="#ref-nielsen-2020">↗</a>
+        </div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false" style="--c:#e57373;">
+        <div class="p-name">Confort & cybersickness</div>
+        <div class="p-def">Limiter la durée de session, régler l'IPD, éviter mouvements brusques ou caméra automatique.</div>
+        <div class="p-detail">
+          Le mal des simulateurs consomme l'attention disponible et dégrade l'apprentissage. Administrer le SSQ (Kennedy et al., 1993) et prévoir un seuil de retrait. <a class="reflink" href="#ref-kennedy-1993">↗</a> <a class="reflink" href="#ref-rebenitsch-2016">↗</a>
+        </div>
+      </div>
+      <div class="triad-card acc" tabindex="0" role="button" aria-expanded="false" style="--c:#ffb74d;">
+        <div class="p-name">Sécurité physique & espace de jeu</div>
+        <div class="p-def">Délimiter le play-space (guardian) et signaler ses limites.</div>
+        <div class="p-detail">
+          En casque, l'apprenant ne voit plus le monde réel : risque de heurts ou de sortie de zone. Un repère de bordure prévient les accidents (principes Google VR / Microsoft Mixed Reality). <a class="reflink" href="#ref-sherman-2018">↗</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout good">
+      <b>En résumé —</b> la technologie immersive seule ne garantit aucun gain pédagogique : c'est la <b>conception</b> (interactivité, dosage de l'immersion, maîtrise de la charge extrinsèque et du confort) qui fait la différence. Les méta-analyses (Wu et al., 2020 ; Çoban et al., 2022) montrent un effet global <b>petit mais positif</b> — à condition que ces principes soient respectés.
+    </div>
+  </section>
+
+  <!-- ============ ARBRE DE DÉCISION ============ -->
+  <section id="arbre">
+    <div class="eyebrow">Application pratique</div>
+    <h2>Arbre de décision : quel dispositif pour quel objectif ?</h2>
+    <p class="section-intro">Un outil rapide pour trancher entre un support multimédia 2D classique et un environnement immersif, et savoir quels principes prioriser une fois le choix fait.</p>
+
+    <div class="tree-box">
+      <div class="tree-path" id="treePath">Étape 1</div>
+      <div id="treeQuestions"></div>
+      <div class="tree-result" id="treeResult">
+        <h3 id="resultTitle"></h3>
+        <p id="resultText"></p>
+        <button class="restart" onclick="resetTree()">↺ recommencer</button>
+      </div>
+      <div class="tree-actions">
+        <button class="tree-prev" id="treePrev" style="display:none;">← étape précédente</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHECKLIST — FRISE ============ -->
+  <section id="checklist">
+    <div class="eyebrow">Application pratique</div>
+    <h2>Checklist de conception pour un simulateur ou jumeau numérique pédagogique</h2>
+    <p class="section-intro">Les mêmes principes n'interviennent pas tous au même moment de l'expérience. Clique une étape de la frise pour voir ce qui compte à ce moment précis du parcours — coche au fil de la conception, rien n'est envoyé ni sauvegardé.</p>
+
+    <div class="frise">
+      <div class="frise-track">
+        <div class="frise-line"></div>
+        <div class="frise-node active" data-stage="0">
+          <div class="node-dot"></div>
+          <div class="node-label">Avant<br>la séance</div>
+        </div>
+        <div class="frise-node" data-stage="1">
+          <div class="node-dot"></div>
+          <div class="node-label">Entrée dans<br>l'expérience</div>
+        </div>
+        <div class="frise-node" data-stage="2">
+          <div class="node-dot"></div>
+          <div class="node-label">Cœur de<br>la séance</div>
+        </div>
+        <div class="frise-node" data-stage="3">
+          <div class="node-dot"></div>
+          <div class="node-label">Après<br>la séance</div>
+        </div>
+      </div>
+
+      <div class="frise-panel">
+        <div class="frise-stage" data-stage="0">
+          <div class="chk-item"><input type="checkbox" id="c1"><label for="c1"><b>Pré-entraînement dissocié</b> — une séquence d'onboarding aux contrôles et à l'interface, séparée du contenu pédagogique, pour absorber l'effet de nouveauté.</label></div>
+        </div>
+        <div class="frise-stage" data-stage="1" style="display:none;">
+          <div class="chk-item"><input type="checkbox" id="c4"><label for="c4"><b>Cohérence sensorielle</b> — éliminer les détails graphiques/sonores séduisants mais non pertinents pour l'objectif pédagogique (le premier réflexe en RV est souvent d'en ajouter).</label></div>
+          <div class="chk-item"><input type="checkbox" id="c2"><label for="c2"><b>Signalisation active</b> — repères visuels/sonores dans l'espace 3D pour orienter l'attention, faute de quoi le champ de vision libre dilue l'attention.</label></div>
+        </div>
+        <div class="frise-stage" data-stage="2" style="display:none;">
+          <div class="chk-item"><input type="checkbox" id="c3"><label for="c3"><b>Segmentation contrôlée</b> — des étapes courtes avec reprise en main possible, plutôt qu'une scène continue ininterrompue.</label></div>
+          <div class="chk-item"><input type="checkbox" id="c5"><label for="c5"><b>Modalité vocale</b> — préférer la narration orale à des panneaux de texte flottants pour ne pas saturer le canal visuel déjà sollicité par l'environnement 3D.</label></div>
+          <div class="chk-item"><input type="checkbox" id="c6"><label for="c6"><b>Agentivité finalisée</b> — vérifier que le contrôle donné à l'apprenant (déplacement, manipulation, avatar) sert directement l'objectif d'apprentissage, pas seulement l'engagement.</label></div>
+        </div>
+        <div class="frise-stage" data-stage="3" style="display:none;">
+          <div class="chk-item"><input type="checkbox" id="c7"><label for="c7"><b>Mesure de la charge</b> — intégrer une mesure subjective de charge (type NASA-TLX) en complément d'indicateurs de performance objectifs propres au domaine, pour distinguer motivation et apprentissage réel.</label></div>
+          <div class="chk-item"><input type="checkbox" id="c9"><label for="c9"><b>Perception de l'usabilité</b> — compléter par un questionnaire de qualité perçue (AttrakDiff pour les dimensions pragmatique/hédonique, SUS pour l'utilisabilité globale), afin de distinguer un problème d'apprentissage d'un problème d'expérience utilisateur.</label></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout good" style="margin-top:18px;">
+      <b>Transversal, à toutes les étapes —</b> <b>Populations spécifiques</b> : pour un public avec des différences d'attention/apprentissage, tester la charge extrinsèque en priorité à chaque étape ci-dessus : la tolérance à la surcharge sensorielle y est généralement plus faible.
+    </div>
+  </section>
+
+
+  <!-- ============ INSTRUMENTS DE MESURE ============ -->
+  <section id="mesure">
+    <div class="eyebrow">Application pratique</div>
+    <h2>Instruments de mesure de l'expérience et de l'usage perçu</h2>
+    <p class="section-intro">Ces cinq instruments ne mesurent pas la même chose — les croiser plutôt que choisir un seul évite de confondre utilisabilité, attractivité, présence et confort. Ils complètent les mesures d'apprentissage objectif et de charge cognitive (NASA-TLX) évoquées plus haut.</p>
+    <div class="measure-list">
+      <div class="measure" data-ref="ref-brooke-1996" tabindex="0" role="button" aria-expanded="false">
+        <div class="measure-head">
+          <div class="measure-titles">
+            <div class="measure-name">SUS</div>
+            <div class="measure-sub">Utilisabilité perçue (générique)</div>
+          </div>
+          <span class="measure-tag" style="--c:var(--amber);">Utilisabilité</span>
+        </div>
+        <div class="measure-detail">
+          <p>Score global d'utilisabilité perçue en 10 items ; rapide, standard de facto pour comparer des versions entre elles. Mesure l'utilisabilité, pas l'apprentissage ni le confort.</p>
+          <a class="reflink" href="#ref-brooke-1996">Brooke (1996) — SUS ↗</a>
+        </div>
+      </div>
+
+      <div class="measure" data-ref="ref-hassenzahl-2003" tabindex="0" role="button" aria-expanded="false">
+        <div class="measure-head">
+          <div class="measure-titles">
+            <div class="measure-name">AttrakDiff</div>
+            <div class="measure-sub">Qualité perçue / attractivité</div>
+          </div>
+          <span class="measure-tag" style="--c:var(--teal);">Attractivité</span>
+        </div>
+        <div class="measure-detail">
+          <p>Distingu le qualité pragmatique (utilité/effort) et qualité hédonique (plaisir/stimulation) ; utile pour savoir si le dispositif est jugé attractif au-delà de sa seule utilisabilité.</p>
+          <a class="reflink" href="#ref-hassenzahl-2003">Hassenzahl, Burmester & Koller (2003) — AttrakDiff ↗</a>
+        </div>
+      </div>
+
+      <div class="measure" data-ref="ref-laugwitz-2008" tabindex="0" role="button" aria-expanded="false">
+        <div class="measure-head">
+          <div class="measure-titles">
+            <div class="measure-name">UEQ</div>
+            <div class="measure-sub">Qualité perçue / attractivité (générique)</div>
+          </div>
+          <span class="measure-tag" style="--c:var(--teal);">Attractivité</span>
+        </div>
+        <div class="measure-detail">
+          <p>Six dimensions (attractivité, clarté, efficacité, fiabilité, stimulation, nouveauté) ; lecture plus fine, avec un benchmark public disponible.</p>
+          <a class="reflink" href="#ref-laugwitz-2008">Laugwitz, Held & Schrepp (2008) — UEQ ↗</a>
+        </div>
+      </div>
+
+      <div class="measure" data-ref="ref-schubert-2001" tabindex="0" role="button" aria-expanded="false">
+        <div class="measure-head">
+          <div class="measure-titles">
+            <div class="measure-name">IPQ</div>
+            <div class="measure-sub">Présence immersive (spécifique VR)</div>
+          </div>
+          <span class="measure-tag" style="--c:var(--violet);">Présence</span>
+        </div>
+        <div class="measure-detail">
+          <p>Présence spatiale, implication, réalisme perçu ; aucun des trois questionnaires ci-dessus ne couvre cette dimension propre à l'immersion.</p>
+          <a class="reflink" href="#ref-schubert-2001">Schubert, Friedmann & Regenbrecht (2001) — IPQ ↗</a>
+        </div>
+      </div>
+
+      <div class="measure" data-ref="ref-kennedy-1993" tabindex="0" role="button" aria-expanded="false">
+        <div class="measure-head">
+          <div class="measure-titles">
+            <div class="measure-name">SSQ</div>
+            <div class="measure-sub">Confort / effets indésirables (spécifique VR)</div>
+          </div>
+          <span class="measure-tag" style="--c:var(--red-soft);">Confort</span>
+        </div>
+        <div class="measure-detail">
+          <p>Nausée, désorientation, fatigue oculomotrice ; à administrer systématiquement pour vérifier qu'un score dégradé ailleurs ne reflète pas un inconfort simulateur.</p>
+          <a class="reflink" href="#ref-kennedy-1993">Kennedy, Lane, Berbaum & Lilienthal (1993) — SSQ ↗</a>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+
+  <!-- ============ LECTURES RECOMMANDÉES ============ -->
+  <section id="lectures">
+    <div class="eyebrow">Pour aller plus loin</div>
+    <h2>Études recommandées</h2>
+    <p class="section-intro">Une sélection resserrée, classée par thème. Format APA 7 ; années et DOI indicatifs — confirmer sur la source avant citation formelle. Clique sur une entrée pour la copier, ou suit les liens <a class="reflink" href="#mesure">Mesure</a> / <a class="reflink" href="#cognition-immersion">Cognition</a> / <a class="reflink" href="#biais">Biais</a> qui pointent ici.</p>
+
+    <div class="reflist">
+      <h3 class="ref-group" style="color:var(--amber);">Théorie multimédia & charge cognitive</h3>
+      <div class="ref" id="ref-mayer-2020">Mayer, R. E. (2020). <i>Multimedia learning</i> (3rd ed.). Cambridge University Press.</div>
+      <div class="ref" id="ref-mayer-fiorella-2022">Mayer, R. E., & Fiorella, L. (Eds.). (2022). <i>The Cambridge handbook of multimedia learning</i> (3rd ed.). Cambridge University Press.</div>
+      <div class="ref" id="ref-sweller-1998">Sweller, J., van Merriënboer, J. J. G., & Paas, F. (1998). Cognitive architecture and instructional design. <i>Educational Psychology Review</i>, <i>10</i>(3), 251–296.</div>
+      <div class="ref" id="ref-kahneman-2011">Kahneman, D. (2011). <i>Thinking, fast and slow</i>. Farrar, Straus and Giroux.</div>
+
+      <h3 class="ref-group" style="color:var(--green-soft);">Objectifs pédagogiques & taxonomie</h3>
+      <div class="ref" id="ref-bloom-1956">Bloom, B. S. (Ed.). (1956). <i>Taxonomy of educational objectives: The classification of educational goals</i> (Handbook I: Cognitive domain). Longmans, Green.</div>
+      <div class="ref" id="ref-anderson-2001">Anderson, L. W., & Krathwohl, D. R. (Eds.). (2001). <i>A taxonomy for learning, teaching, and assessing: A revision of Bloom's taxonomy of educational objectives</i>. Longman.</div>
+      <div class="ref" id="ref-krathwohl-2002">Krathwohl, D. R. (2002). A revision of Bloom's taxonomy: An overview. <i>Theory Into Practice</i>, <i>41</i>(4), 212–218. https://doi.org/10.1207/s15430421tip4104_2</div>
+
+      <h3 class="ref-group" style="color:var(--teal);">Modèles de l'apprentissage immersif</h3>
+      <div class="ref" id="ref-makransky-2021">Makransky, G., & Petersen, G. B. (2021). The Cognitive Affective Model of Immersive Learning (CAMIL): A theoretical model for how immersive learning motivates and supports learning. <i>Educational Psychology Review</i>, <i>33</i>(3), 937–958. https://doi.org/10.1007/s10648-021-09586-2</div>
+      <div class="ref" id="ref-makransky-2019">Makransky, G., Terkildsen, T. S., & Mayer, R. E. (2019). Adding immersive virtual reality to a science lab simulation causes more presence but less learning: Evidence from EEG. <i>Learning and Instruction</i>, <i>60</i>, 225–236. https://doi.org/10.1016/j.learninstruc.2018.11.003</div>
+      <div class="ref" id="ref-parong-2018">Parong, J., & Mayer, R. E. (2018). Learning science in immersive virtual reality. <i>Journal of Educational Psychology</i>, <i>110</i>(6), 785–797. https://doi.org/10.1037/edu0000241</div>
+      <div class="ref" id="ref-parong-2021">Parong, J., & Mayer, R. E. (2021). Cognitive and affective processes for learning science in immersive virtual reality. <i>Journal of Computer Assisted Learning</i>, <i>37</i>(1), 226–241. https://doi.org/10.1111/jcal.12482</div>
+      <div class="ref" id="ref-miguel-2024">Miguel-Alonso, I., et al. (2024). Évaluation de l'effet de nouveauté en RV immersive [titre et détails à confirmer]. <i>Virtual Reality</i>.</div>
+      <div class="ref" id="ref-radianti-2020">Radianti, J., Majchrzak, T. A., Fromm, J., & Wohlgenannt, I. (2020). A systematic review of immersive virtual reality applications for higher education: Design elements, lessons learned, and research agenda. <i>Computers & Education</i>, <i>147</i>, 103778. https://doi.org/10.1016/j.compedu.2019.103778</div>
+
+      <h3 class="ref-group" style="color:var(--violet);">Attention, mémoire de travail & cognition incarnée</h3>
+      <div class="ref" id="ref-wickens-2008">Wickens, C. D. (2008). Multiple resources and mental workload. <i>Human Factors</i>, <i>50</i>(3), 449–455.</div>
+      <div class="ref" id="ref-lavie-2005">Lavie, N. (2005). Distracted and confused?: Selective attention under load. <i>Trends in Cognitive Sciences</i>, <i>9</i>(2), 75–82.</div>
+      <div class="ref" id="ref-kilteni-2012">Kilteni, K., Groten, R., & Slater, M. (2012). The sense of embodiment in virtual reality. <i>Presence: Teleoperators and Virtual Environments</i>, <i>21</i>(4), 373–387.</div>
+      <div class="ref" id="ref-konig-2021">König, S., et al. (2021). Exploration en RV immersive vs carte 2D : deux formats de connaissance spatiale [titre et détails à confirmer]. <i>Frontiers in Virtual Reality</i>.</div>
+      <div class="ref" id="ref-barsalou-2008">Barsalou, L. W. (2008). Grounded cognition. <i>Annual Review of Psychology</i>, <i>59</i>, 617–645.</div>
+
+      <h3 class="ref-group" style="color:var(--red-soft);">Biais cognitifs en contexte immersif</h3>
+      <div class="ref" id="ref-yee-2007">Yee, N., & Bailenson, J. N. (2007). The Proteus effect: Self transformations in virtual reality. <i>Human Communication Research</i>, <i>33</i>(3), 271–290. https://doi.org/10.1111/j.1468-2958.2007.00299.x</div>
+      <div class="ref" id="ref-bjork-1994">Bjork, R. A. (1994). Memory and metamemory considerations in the training of human beings. In J. Metcalfe & A. P. Shimamura (Eds.), <i>Metacognition: Knowing about knowing</i> (pp. 185–205). MIT Press.</div>
+      <div class="ref" id="ref-parasuraman-2010">Parasuraman, R., & Manzey, D. H. (2010). Complacency and bias in human use of automation: An attentional integration. <i>Human Factors</i>, <i>52</i>(3), 381–410. https://doi.org/10.1177/0018720810376055</div>
+
+      <h3 class="ref-group" style="color:var(--amber);">UX et ergonomie des environnements immersifs</h3>
+      <div class="ref" id="ref-jerald-2015">Jerald, J. (2015). <i>The VR book: Human-centered design for virtual reality</i>. Morgan & Claypool.</div>
+      <div class="ref" id="ref-sutcliffe-2004">Sutcliffe, A., & Gault, B. (2004). Heuristic evaluation of virtual reality applications. <i>Interacting with Computers</i>, <i>16</i>(4), 671–689. https://doi.org/10.1016/j.intcom.2004.04.001</div>
+      <div class="ref" id="ref-nielsen-2020">Nielsen, J. (2020). <i>10 usability heuristics applied to virtual reality</i>. Nielsen Norman Group. https://www.nngroup.com/articles/usability-heuristics-virtual-reality/</div>
+      <div class="ref" id="ref-sherman-2018">Sherman, W. R., & Craig, A. B. (2018). <i>Understanding virtual reality: Interface, application, and design</i> (2nd ed.). Morgan Kaufmann. https://doi.org/10.1016/C2015-0-05611-5</div>
+      <div class="ref" id="ref-merchant-2014">Merchant, Z., Goetz, E. T., Cifuentes, L., Keeney-Kennicutt, W., & Davis, T. J. (2014). Effectiveness of virtual reality-based instruction on students' learning outcomes in K-12 and higher education: A meta-analysis. <i>Computers & Education</i>, <i>70</i>, 29–40. https://doi.org/10.1016/j.compedu.2013.07.033</div>
+      <div class="ref" id="ref-wu-2020">Wu, B., Yu, X., & Gu, X. (2020). Effectiveness of immersive virtual reality using head-mounted displays on learning performance: A meta-analysis. <i>British Journal of Educational Technology</i>, <i>51</i>(6), 1991–2005. https://doi.org/10.1111/bjet.13023</div>
+      <div class="ref" id="ref-coban-2022">Çoban, M., Bolat, Y. I., & Göksu, I. (2022). The potential of immersive virtual reality to enhance learning: A meta-analysis. <i>Educational Research Review</i>, <i>36</i>, 100452. https://doi.org/10.1016/j.edurev.2022.100452</div>
+      <div class="ref" id="ref-hamilton-2021">Hamilton, D., McKechnie, J., Edgerton, E., & Wilson, C. (2021). Immersive virtual reality as a pedagogical tool in education: A systematic literature review of quantitative learning outcomes and experimental design. <i>Journal of Computing in Higher Education</i>, <i>33</i>, 1–21. https://doi.org/10.1007/s40692-020-00169-2</div>
+      <div class="ref" id="ref-sanchez-vives-2005">Sanchez-Vives, M. V., & Slater, M. (2005). From presence to consciousness through virtual reality. <i>Nature Reviews Neuroscience</i>, <i>6</i>(4), 332–339. https://doi.org/10.1038/nrn1651</div>
+      <div class="ref" id="ref-cummings-2016">Cummings, J. J., & Bailenson, J. N. (2016). How immersive is enough? A meta-analysis of the effect of immersive technology on user presence. <i>Media Psychology</i>, <i>19</i>(2), 272–309. https://doi.org/10.1080/15213269.2015.1015740</div>
+      <div class="ref" id="ref-petersen-2022">Petersen, G. B., & Makransky, G. (2022). A study of how immersion and interactivity drive VR learning. <i>Computers & Education</i>, <i>179</i>, 104421. https://doi.org/10.1016/j.compedu.2021.104421</div>
+      <div class="ref" id="ref-makransky-2019b">Makransky, G., Borre-Gude, S., & Mayer, R. E. (2019). Motivational and cognitive benefits of training in immersive virtual reality based on multiple assessments. <i>Journal of Computer Assisted Learning</i>, <i>35</i>(6), 691–707. https://doi.org/10.1111/jcal.12375</div>
+      <div class="ref" id="ref-juliano-2022">Juliano, J. M., et al. (2022). Increased cognitive load in immersive virtual reality during motor learning. <i>Scientific Reports</i>, <i>12</i>, 9331. https://doi.org/10.1038/s41598-022-13165-8</div>
+      <div class="ref" id="ref-rebenitsch-2016">Rebenitsch, L., & Owen, C. (2016). Review on cybersickness in applications and visual displays. <i>Virtual Reality</i>, <i>20</i>(2), 101–125. https://doi.org/10.1007/s10055-016-0285-9</div>
+      <div class="ref" id="ref-stanney-1997">Stanney, K. M., Kennedy, R. S., & Drexler, J. M. (1997). Cybersickness is not simulator sickness. <i>Proceedings of the Human Factors and Ergonomics Society Annual Meeting</i>, <i>41</i>(2), 1138–1142. https://doi.org/10.1177/107118139704100290</div>
+      <div class="ref" id="ref-l1l2">Travaux sur le modèle à deux phases <i>interface (L1) / contenu (L2)</i> en éducation XR [référence-cadre à confirmer].</div>
+
+      <h3 class="ref-group" style="color:var(--teal);">Mesures & échelles (utilisées dans « Instruments de mesure »)</h3>
+      <div class="ref" id="ref-brooke-1996">Brooke, J. (1996). SUS: A quick and dirty usability scale. In P. W. Jordan, B. Thomas, B. A. Weerdmeester, & I. L. McClelland (Eds.), <i>Usability evaluation in industry</i> (pp. 189–194). Taylor & Francis.</div>
+      <div class="ref" id="ref-hassenzahl-2003">Hassenzahl, M., Burmester, M., & Koller, F. (2003). AttrakDiff: Ein Fragebogen zur Messung wahrgenommener Produktästhetik. In <i>Mensch & Computer 2003</i> (pp. 289–298). B.G. Teubner.</div>
+      <div class="ref" id="ref-laugwitz-2008">Laugwitz, B., Held, T., & Schrepp, M. (2008). Construction and evaluation of a user experience questionnaire. In A. Holzinger (Ed.), <i>HCI and Usability for Education and Work</i> (pp. 63–76). Springer. https://doi.org/10.1007/978-3-540-89350-9_6</div>
+      <div class="ref" id="ref-schubert-2001">Schubert, T., Friedmann, F., & Regenbrecht, H. (2001). The experience of presence: Factor analytic insights. <i>Presence: Teleoperators and Virtual Environments</i>, <i>10</i>(3), 277–295. https://doi.org/10.1162/105474601300343603</div>
+      <div class="ref" id="ref-kennedy-1993">Kennedy, R. S., Lane, N. E., Berbaum, K. S., & Lilienthal, M. G. (1993). Simulator Sickness Questionnaire: An enhanced method for quantifying simulator sickness. <i>The International Journal of Aviation Psychology</i>, <i>3</i>(3), 203–220. https://doi.org/10.1207/s15327108ijap0303_3</div>
+    </div>
+    <p style="font-size:.82rem; margin-top:18px;">Références indicatives (points d'entrée), pas des citations vérifiées : confirmer années, titres exacts et DOI sur la source originale avant toute citation formelle. Les entrées marquées « à confirmer » ne citent qu'un auteur et une année repères.</p>
+  </section>
+
+
+  <footer id="refs">
+    <p>Fiche de synthèse à visée pédagogique — les références citées sont des points d'entrée, pas des citations exactes ; vérifie les DOI et éditions les plus récentes avant citation formelle.</p>
+  </footer>
+
+</main>
+</div>
+
+<button class="to-top" id="toTop" aria-label="Retour en haut de la page" title="Retour en haut">↑</button>
+
+<script>
+  // ---- Hero immersion slider (modèle à deux leviers) ----
+  try {
+  const slider = document.getElementById('immersionSlider');
+  const design = document.getElementById('designSlider');
+  const segI = document.getElementById('segIntrinsic');
+  const segE = document.getElementById('segExtrinsic');
+  const segG = document.getElementById('segGermane');
+  const barP = document.getElementById('barPresence');
+  const valI = document.getElementById('valIntrinsic');
+  const valE = document.getElementById('valExtrinsic');
+  const valG = document.getElementById('valGermane');
+  const valP = document.getElementById('valPresence');
+  const tagI = document.getElementById('tagIntrinsic');
+  const tagE = document.getElementById('tagExtrinsic');
+  const tagG = document.getElementById('tagGermane');
+  const stack = document.getElementById('loadStack');
+  const fit = document.getElementById('fitBadge');
+  const interp = document.getElementById('interp');
+
+  // Modèle : capacité de la mémoire de travail FINIE (100 %) = intrinsèque + extrinsèque + germane.
+  //  - Intrinsèque : dépend de la complexité ET de l'interactivité des éléments à traiter simultanément (Sweller, §783).
+  //      La RV ajoute des éléments interactifs simultanés (corps virtuel, navigation, champ libre) → elle MONTE avec l'immersion.
+  //  - Extrinsèque : MONTE avec l'immersion (nouveauté, richesse sensorielle, champ libre)
+  //      mais est RÉDUCTIBLE par la conception (signalisation, pré-entraînement, cohérence, modalité) — cible des principes de Mayer.
+  //  - Germane : la place RESTANTE. Elle soutient présence + apprentissage génératif.
+  //      Quand la conception maîtrise l'extrinsèque, on la VOIT remonter en VR.
+  //  - Présence (CAMIL) : bénéfice POTENTIEL de l'immersion. Rendements décroissants (Cummings & Bailenson, §1024),
+  //      et une conception défaillante l'EFFONDRE (§870). Ne garantit pas l'apprentissage si l'extrinsèque a pompé la capacité.
+
+  function updateSlider(){
+    const v = parseInt(slider.value, 10);   // immersion : 0 = 2D, 100 = RV haute fidélité
+    const q = parseInt(design.value, 10);   // conception : 0 = pauvre, 100 = maîtrisée
+
+    // Intrinsèque MOBILE : complexité + interactivité des éléments traités en parallèle (Sweller, §783).
+    // 2D (v=0) -> 30 % ; RV haute fidélité (v=100) -> 42 % (la RV empile plus d'éléments à gérer à la fois).
+    const INTR = 30 + Math.round(0.12 * v);
+
+    const baseExtr   = 15 + v * 0.30;                       // coût brut de l'immersion : 15 -> 45
+    const mitigation = (q / 100) * (8 + v * 0.35);          // gain de conception, croissant avec l'immersion
+    const extr = Math.max(8, Math.round(baseExtr - mitigation)); // plancher 8 : coût de nouveauté irréductible
+    const germ = 100 - INTR - extr;                          // reste de capacité
+    // Présence (CAMIL) :
+    //  - sat(v) : rendements décroissants de l'immersion sur la présence (Cummings & Bailenson, §1024).
+    //  - facteur (0,15 + 0,85 * q/100) : à q=0 la conception défaillante EFFONDRE la présence (~15 %), à q=100 elle la libère.
+    const sat = (1 - Math.exp(-v / 45)) / (1 - Math.exp(-100 / 45));
+    const presence = Math.round(90 * sat * (0.15 + 0.85 * q / 100));
+
+    segI.style.width = INTR + '%';
+    segE.style.width = extr + '%';
+    segG.style.width = germ + '%';
+    segG.classList.toggle('warn', germ >= 25 && germ < 40);
+    segG.classList.toggle('risk', germ < 25);
+    barP.style.width = presence + '%';
+    valI.textContent = INTR + '%';
+    valE.textContent = extr + '%';
+    valG.textContent = germ + '%';
+    valP.textContent = presence + '%';
+    tagI.innerHTML = '<span class="t-label">Intrinsèque</span><span class="t-val">' + INTR + ' %</span>';
+    tagE.innerHTML = '<span class="t-label">Extrinsèque</span><span class="t-val">' + extr + ' %</span>';
+    tagG.innerHTML = '<span class="t-label">Germane</span><span class="t-val">' + germ + ' %</span>';
+
+    // Badge d'adéquation : combine charge germane restante, qualité de conception,
+    // présence mobilisée et compétition CAMIL (Makransky).
+    // Deux sens d'« optimal » (§844, §970) :
+    //   - Optimal (2D) : 2D bien conçue = optimal pour l'apprentissage, sans bénéfice immersif.
+    //   - Optimal (immersif) : il faut PRÉSENCE + CONCEPTION maîtrisée (sinon on confond présence et apprentissage, §929).
+    let base;                                   // 'risk' | 'tension' | 'good' | 'ok'
+    if (germ < 25) base = 'risk';
+    else if (germ < 40) base = 'tension';
+    else if (germ < 50) base = 'good';
+    else base = 'ok';
+
+    // La conception plafonne le niveau maximal atteignable.
+    if (q < 35 && base === 'ok') base = 'tension';     // mal conçu : jamais au-delà de Tension
+    else if (q < 70 && base === 'ok') base = 'good';   // moyen : pas Optimal immersif
+
+    // « Optimal » : germane ≥ 50 + conception maîtrisée + présence mobilisée (sinon paradoxe 2D q=100 :
+    // présence nulle mais badge Optimal). Le cas 2D est distingué dans le message (§844 : optimal apprentissage sans bénéfice immersif).
+    if (base === 'ok' && presence < 40) base = 'good';
+
+    // Distinguer l'Optimal propre à la 2D (§844) pour le message ; le badge reste « Optimal » dans les deux cas.
+    const is2D = (base === 'ok' && v < 20);
+
+    // D : compétition CAMIL (Makransky) — présence élevée en environnement mal conçu
+    // cannibalise l'apprentissage factuel. Fenêtre 45-55 lissée (vs seuil sec q=50) pour éviter un saut non documenté.
+    const compete = presence >= 50 && q >= 45 && q <= 55;
+    if (compete && base !== 'risk' && !is2D && base === 'ok') base = 'tension';
+
+    const fitMap = { risk:'Risque', tension:'Tension', good:'Confortable', ok:'Optimal' };
+    fit.className = 'fit-badge ' + base;
+    fit.textContent = fitMap[base];
+    const fitTips = {
+      risk:    "Risque : la charge extrinsèque pompe la capacité — l'apprentissage est en danger. Remonte la conception ou baisse l'immersion.",
+      tension: "Tension : un levier tire dans le sens contraire de l'autre (présence élevée mais conception à la limite, ou inverse). Surveille les deux curseurs.",
+      good:    "Confortable : charge équilibrée, mais le bénéfice immersif n'est pas encore maximal. Une conception maîtrisée débloquerait l'Optimal.",
+      ok:      is2D
+        ? "Optimal (2D) : conditions idéales pour l'apprentissage en écran 2D — sans bénéfice immersif (CAMIL ne s'applique qu'en immersion)."
+        : "Optimal (immersif) : charge saine ET présence mobilisée — bénéfice immersif réel (Makransky & Petersen)."
+    };
+    fit.setAttribute('data-tip', fitTips[base]);
+
+    // Niveau d'immersion (libellé)
+    let level;
+    if (v < 20) level = "Immersion faible (multimédia 2D)";
+    else if (v < 55) level = "Immersion intermédiaire (vidéo 360°, RV non immersive)";
+    else if (v < 85) level = "RV immersive";
+    else level = "RV immersive à haute fidélité";
+
+    // Qualité de conception (libellé)
+    let dlevel;
+    if (q < 35) dlevel = "conception pauvrement maîtrisée";
+    else if (q < 70) dlevel = "conception moyennement maîtrisée";
+    else dlevel = "conception bien maîtrisée";
+
+    // Message synthétique — chaîne causale claire :
+    //   support (immersion) + conception -> charge extrinsèque -> place germane restante -> (présence CAMIL).
+    let msg;
+    if (germ >= 50){
+      msg = "<strong>" + level + ", " + dlevel + ".</strong> La conception libère largement la capacité : il reste environ <strong>" + germ + " % de charge germane utile</strong> pour l'apprentissage génératif. Les principes de Mayer font pleinement leur effet.";
+      if (is2D) msg += " En 2D, la présence est nulle par définition (CAMIL ne s'applique qu'en immersion) : c'est <strong>optimal pour l'apprentissage, sans bénéfice immersif</strong> — exactement ce que dit le document (§844).";
+      else msg += " En RV, la présence atteint <strong>" + presence + " %</strong> : bénéfice immersif réel, sans cannibaliser l'apprentissage factuel.";
+    } else if (germ >= 40){
+      msg = "<strong>" + level + ", " + dlevel + ".</strong> Charge germane confortable (<strong>" + germ + " %</strong>) : assez de place utile. Présence (" + presence + " %) et apprentissage peuvent coexister.";
+    } else if (germ >= 25){
+      msg = "<strong>" + level + ", " + dlevel + ".</strong> Tension : l'extrinsèque rogne la germane (plus que <strong>" + (100 - germ - 40) + " % de marge</strong> avant le seuil d'alerte). Renforcer signalisation et pré-entraînement pour éviter que la présence (CAMIL) ne cannibalise l'apprentissage factuel.";
+    } else {
+      msg = "<strong>" + level + ", " + dlevel + ".</strong> L'extrinsèque sature la capacité (germane à <strong>" + germ + " %</strong>, sous le seuil d'alerte). Sans conception, l'immersion ne tient pas : la présence s'effondre (" + presence + " %) et l'apprentissage avec. Garder en tête le mirage « plus d'immersion = plus d'apprentissage » (Makransky et al., 2019).";
+    }
+    // Compétition CAMIL explicite (fenêtre 45-55).
+    if (compete){
+      msg += " <em>Présence élevée mais conception à la limite : elle risque de cannibaliser l'apprentissage factuel (Makransky et al., 2019).</em>";
+    }
+    // Zone morte du plancher extr=8 (conception saturée).
+    if (extr === 8 && v >= 20){
+      msg += " <em>Conception saturée : l'immersion n'ajoute plus de charge extrinsèque — seule la présence progresse.</em>";
+    }
+
+    slider.setAttribute('aria-valuenow', v);
+    slider.setAttribute('aria-valuetext', level + " — " + v + " / 100");
+    design.setAttribute('aria-valuenow', q);
+    design.setAttribute('aria-valuetext', dlevel + " — " + q + " / 100");
+    stack.setAttribute('aria-label',
+      "Charge cognitive (capacité de la mémoire de travail, 100 %) : intrinsèque " + INTR + " %, extrinsèque " + extr + " %, germane " + germ + " %. Présence (CAMIL) " + presence + " %.");
+    interp.innerHTML = msg;
+  }
+  slider.addEventListener('input', updateSlider);
+  design.addEventListener('input', updateSlider);
+  updateSlider();
+
+  // Ne pas laisser les sliders « capturer » la molette (sinon, au survol, la molette
+  // modifie la valeur au lieu de faire défiler la page — résistance au scroll).
+  [slider, design].forEach(s => s.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    window.scrollBy({ top: e.deltaY, behavior: 'auto' });
+  }, { passive: false }));
+
+  } catch(e){ console.warn('[hero slider] désactivé (non bloquant):', e); }
+
+  // ---- Principle card dots + accordion ----
+  try {
+  document.querySelectorAll('.p-card, .triad-card.acc').forEach(card => {
+    const dotsWrap = card.querySelector('.dots');
+    if (dotsWrap){
+      const n = parseInt(card.dataset.dots, 10);
+      for(let i=0;i<3;i++){
+        const d = document.createElement('div');
+        d.className = 'dot' + (i < n ? ' on' : '');
+        dotsWrap.appendChild(d);
+      }
+    }
+    // N'afficher la flèche QUE si la carte a un 2nd niveau (.p-detail)
+    if (card.querySelector('.p-detail')) card.classList.add('has-detail');
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('role', 'button');
+    card.setAttribute('aria-expanded', 'false');
+    const toggle = () => {
+      const open = card.classList.toggle('open');
+      card.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+    card.addEventListener('click', toggle);
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+    });
+  });
+
+  } catch(e){ console.warn('[accordion] désactivé (non bloquant):', e); }
+
+  // ---- Frise (timeline) stage switching ----
+  document.querySelectorAll('.frise-node').forEach(node => {
+    node.setAttribute('tabindex', '0');
+    node.setAttribute('role', 'button');
+    const activate = () => {
+      const stage = node.dataset.stage;
+      document.querySelectorAll('.frise-node').forEach(n => n.classList.toggle('active', n === node));
+      document.querySelectorAll('.frise-stage').forEach(s => {
+        s.style.display = (s.dataset.stage === stage) ? 'flex' : 'none';
+      });
+    };
+    node.addEventListener('click', activate);
+    node.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
+    });
+  });
+
+  // ---- Bloom wheel ----
+  (function(){
+    const levels = [
+      { n:1, fr:"Mémoriser", en:"Remember", col:"--text-faint",
+        desc:"Restituer des faits, termes ou concepts de base depuis la mémoire à long terme.",
+        verbs:"définir · lister · nommer · reconnaître · rappeler" },
+      { n:2, fr:"Comprendre", en:"Understand", col:"--amber",
+        desc:"Construire du sens : expliquer une idée avec ses propres mots, interpréter, résumer.",
+        verbs:"expliquer · résumer · illustrer · classer · paraphraser" },
+      { n:3, fr:"Appliquer", en:"Apply", col:"--green-soft",
+        desc:"Utiliser une procédure ou une connaissance dans une situation nouvelle et concrète.",
+        verbs:"exécuter · mettre en œuvre · utiliser · résoudre · démontrer" },
+      { n:4, fr:"Analyser", en:"Analyze", col:"--teal",
+        desc:"Décomposer un ensemble en ses parties et établir les relations entre elles.",
+        verbs:"différencier · organiser · comparer · attribuer · structurer" },
+      { n:5, fr:"Évaluer", en:"Evaluate", col:"--violet",
+        desc:"Porter un jugement argumenté à partir de critères et de normes explicites.",
+        verbs:"critiquer · juger · justifier · vérifier · argumenter" },
+      { n:6, fr:"Créer", en:"Create", col:"--red-soft",
+        desc:"Assembler des éléments en un tout cohérent et original : concevoir, produire, planifier.",
+        verbs:"concevoir · générer · planifier · produire · élaborer" }
+    ];
+
+    const SVGNS = "http://www.w3.org/2000/svg";
+    const segGroup = document.getElementById('bloomSegs');
+    if (!segGroup) return;
+    const cx = 160, cy = 160, rOuter = 150, rInner = 74, rLabel = 112;
+    const N = levels.length;
+    const step = 2 * Math.PI / N;
+    const gap = 0.028; // radians, petit espace entre segments
+
+    // start at top (-90°) and go clockwise
+    function polar(r, a){ return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; }
+
+    function annularPath(a0, a1){
+      const [x0o,y0o] = polar(rOuter, a0);
+      const [x1o,y1o] = polar(rOuter, a1);
+      const [x1i,y1i] = polar(rInner, a1);
+      const [x0i,y0i] = polar(rInner, a0);
+      const large = (a1 - a0) > Math.PI ? 1 : 0;
+      return `M ${x0o} ${y0o} A ${rOuter} ${rOuter} 0 ${large} 1 ${x1o} ${y1o} `
+           + `L ${x1i} ${y1i} A ${rInner} ${rInner} 0 ${large} 0 ${x0i} ${y0i} Z`;
+    }
+
+    const detail = document.getElementById('bloomDetail');
+    const bdName = document.getElementById('bdName');
+    const bdEn = document.getElementById('bdEn');
+    const bdDesc = document.getElementById('bdDesc');
+    const bdVerbs = document.getElementById('bdVerbs');
+    const segEls = [];
+
+    function select(i){
+      const L = levels[i];
+      const c = `var(${L.col})`;
+      bdName.textContent = `${L.n}. ${L.fr}`;
+      bdName.style.color = c;
+      bdEn.textContent = L.en;
+      bdDesc.textContent = L.desc;
+      bdVerbs.innerHTML = `<b>Verbes d'action —</b> ${L.verbs}`;
+      detail.style.setProperty('--bl', c);
+      segEls.forEach((el, j) => {
+        el.classList.toggle('dim', j !== i);
+        el.style.opacity = (j === i) ? '1' : '';
+      });
+    }
+    function clearSel(){
+      segEls.forEach(el => { el.classList.remove('dim'); el.style.opacity = ''; });
+    }
+
+    levels.forEach((L, i) => {
+      const a0 = -Math.PI/2 + i*step + gap/2;
+      const a1 = -Math.PI/2 + (i+1)*step - gap/2;
+      const aMid = (a0 + a1) / 2;
+      const c = `var(${L.col})`;
+
+      const g = document.createElementNS(SVGNS, 'g');
+      g.setAttribute('class', 'bloom-seg');
+      g.setAttribute('tabindex', '0');
+      g.setAttribute('role', 'button');
+      g.setAttribute('aria-label', `${L.fr} — ${L.en}`);
+
+      const path = document.createElementNS(SVGNS, 'path');
+      path.setAttribute('d', annularPath(a0, a1));
+      path.setAttribute('fill', c);
+      path.setAttribute('opacity', '0.82');
+      g.appendChild(path);
+
+      // number near inner edge
+      const [nx, ny] = polar(rInner + 20, aMid);
+      const numT = document.createElementNS(SVGNS, 'text');
+      numT.setAttribute('x', nx); numT.setAttribute('y', ny + 4);
+      numT.setAttribute('text-anchor', 'middle');
+      numT.setAttribute('class', 'bloom-seg-label');
+      numT.setAttribute('style', 'font-size:13px; fill:#0a0d12;');
+      numT.textContent = L.n;
+      g.appendChild(numT);
+
+      // name near outer edge
+      // Sur les segments quasi-horizontaux (Comprendre à 3h, Évaluer à 9h),
+      // le nom et le numéro tombent sur la même ligne : on descend le nom d'un cran.
+      const nameDy = (Math.abs(Math.sin(aMid)) < 0.2) ? 15 : 4;
+      const [lx, ly] = polar(rLabel, aMid);
+      const nameT = document.createElementNS(SVGNS, 'text');
+      nameT.setAttribute('x', lx); nameT.setAttribute('y', ly + nameDy);
+      nameT.setAttribute('text-anchor', 'middle');
+      nameT.setAttribute('class', 'bloom-seg-label');
+      nameT.textContent = L.fr;
+      g.appendChild(nameT);
+
+      g.addEventListener('mouseenter', () => select(i));
+      g.addEventListener('focus', () => select(i));
+      g.addEventListener('click', () => select(i));
+      g.addEventListener('keydown', (e) => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); select(i);} });
+
+      segGroup.appendChild(g);
+      segEls.push(g);
+    });
+
+    // leaving the wheel restores the "all equal" state
+    segGroup.addEventListener('mouseleave', clearSel);
+  })();
+
+  const tree = {
+    start: {
+      q: "Quel est l'objectif d'apprentissage principal ?",
+      opts: [
+        { label: "Comprendre un concept abstrait / déclaratif", next: "concept" },
+        { label: "Exécuter une procédure ou un geste", next: "procedure" },
+        { label: "Se repérer dans un espace en 3D", next: "spatial" },
+        { label: "Susciter motivation / empathie / intérêt", next: "affect" }
+      ]
+    },
+    concept: {
+      q: "Le contenu est-il déjà complexe en soi (beaucoup d'éléments en interaction) ?",
+      opts: [
+        { label: "Oui, très complexe", next: "R_2D_complex" },
+        { label: "Non, relativement simple", next: "R_2D_simple" }
+      ]
+    },
+    procedure: {
+      q: "Le geste implique-t-il l'espace, le corps ou des objets manipulables ?",
+      opts: [
+        { label: "Oui, fortement", next: "R_VR_proc" },
+        { label: "Non, surtout séquentiel/mental", next: "R_2D_proc" }
+      ]
+    },
+    spatial: {
+      q: "Le transfert vers un contexte réel 3D est-il un objectif explicite ?",
+      opts: [
+        { label: "Oui", next: "R_VR_spatial" },
+        { label: "Pas vraiment", next: "R_2D_spatial" }
+      ]
+    },
+    affect: {
+      q: "Mesures-tu l'apprentissage factuel en plus de la motivation ?",
+      opts: [
+        { label: "Oui, les deux sont mesurés séparément", next: "R_VR_affect" },
+        { label: "Non, seulement l'engagement", next: "R_caution_affect" }
+      ]
+    }
+  };
+
+  const results = {
+    R_2D_complex: { title: "→ Multimédia 2D, priorité absolue au contrôle de charge", text: "Contenu complexe : privilégie la segmentation, le pré-entraînement, la signalisation et la modalité vocale. L'immersion ajouterait une charge extrinsèque que ce contenu ne peut pas se permettre." },
+    R_2D_simple: { title: "→ Multimédia 2D standard", text: "Contenu simple : les principes de cohérence, contiguïté et multimédia suffisent largement. L'immersion apporterait un coût d'ingénierie sans bénéfice pédagogique clair ici." },
+    R_VR_proc: { title: "→ Immersion recommandée, avec pré-entraînement obligatoire", text: "C'est le terrain de prédilection de la RV (CAMIL) : agentivité et incarnation soutiennent l'apprentissage procédural/psychomoteur. Prévois impérativement un onboarding séparé du contenu pour absorber l'effet de nouveauté." },
+    R_2D_proc: { title: "→ Multimédia 2D ou simulation simple suffisent", text: "Procédure surtout mentale/séquentielle : une animation avec narration (modalité, segmentation) est souvent aussi efficace, pour un coût de production bien moindre." },
+    R_VR_spatial: { title: "→ Immersion recommandée", text: "Le transfert spatial vers le réel est l'un des bénéfices les mieux documentés de la RV immersive. Combine avec signalisation et cohérence pour limiter la charge extrinsèque du champ de vision libre." },
+    R_2D_spatial: { title: "→ Modèle 3D interactif à l'écran (sans casque)", text: "Sans exigence de transfert réel, une exploration 3D sur écran capte l'essentiel du bénéfice spatial sans le coût matériel ni la charge extrinsèque propre au casque." },
+    R_VR_affect: { title: "→ Immersion justifiable, à condition de séparer les mesures", text: "Bonne pratique : la RV peut légitimement viser la motivation/l'empathie tant que l'apprentissage factuel est mesuré indépendamment, pour ne pas confondre « plus de présence » avec « plus d'apprentissage »." },
+    R_caution_affect: { title: "→ Prudence avant de choisir l'immersion", text: "Sans mesure de l'apprentissage réel, il est impossible de distinguer un gain pédagogique d'un simple effet de nouveauté ou d'un pic de motivation temporaire. Ajoute au minimum un indicateur factuel avant de généraliser le dispositif." }
+  };
+
+  let history = [];
+  function maxDepth(key){
+    const node = tree[key];
+    if (!node) return 1;
+    let m = 1;
+    node.opts.forEach(o => { if (!results[o.next]) m = Math.max(m, 1 + maxDepth(o.next)); });
+    return m;
+  }
+  function renderTree(nodeKey){
+    const node = tree[nodeKey];
+    const qWrap = document.getElementById('treeQuestions');
+    const resultBox = document.getElementById('treeResult');
+    const prevBtn = document.getElementById('treePrev');
+    resultBox.classList.remove('show');
+    document.getElementById('treePath').textContent = `Étape ${history.length + 1} / ${maxDepth('start')}`;
+    prevBtn.style.display = history.length ? 'inline-block' : 'none';
+
+    if (node){
+      qWrap.style.display = 'block';
+      qWrap.innerHTML = `<div class="tree-question">${node.q}</div>
+        <div class="tree-options">${node.opts.map((o,i) => `<div class="tree-opt" data-i="${i}" tabindex="0" role="button">${o.label}</div>`).join('')}</div>`;
+      qWrap.querySelectorAll('.tree-opt').forEach(el => {
+        const choose = () => {
+          const opt = node.opts[parseInt(el.dataset.i,10)];
+          history.push(nodeKey);
+          if (results[opt.next]){
+            qWrap.style.display = 'none';
+            showResult(opt.next);
+          } else {
+            renderTree(opt.next);
+          }
+        };
+        el.addEventListener('click', choose);
+        el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(); } });
+      });
+    }
+  }
+  function showResult(key){
+    const r = results[key];
+    document.getElementById('resultTitle').textContent = r.title;
+    document.getElementById('resultText').textContent = r.text;
+    document.getElementById('treeResult').classList.add('show');
+    document.getElementById('treePath').textContent = 'Résultat';
+    document.getElementById('treePrev').style.display = history.length ? 'inline-block' : 'none';
+  }
+  function goPrev(){
+    if (!history.length) return;
+    const prev = history.pop();
+    document.getElementById('treeResult').classList.remove('show');
+    document.getElementById('treeQuestions').style.display = 'block';
+    renderTree(prev);
+  }
+  function resetTree(){
+    history = [];
+    document.getElementById('treeQuestions').style.display = 'block';
+    renderTree('start');
+  }
+  document.getElementById('treePrev').addEventListener('click', goPrev);
+  resetTree();
+
+  // ---- Bascule de thème clair / sombre ----
+  (function(){
+    const root = document.documentElement;
+    const btn = document.getElementById('themeToggle');
+    const icon = document.getElementById('ttIcon');
+    const label = document.getElementById('ttLabel');
+    if (!btn) return;
+
+    function apply(theme){
+      if (theme === 'light'){
+        root.setAttribute('data-theme', 'light');
+        icon.textContent = '☾';
+        label.textContent = 'Sombre';
+      } else {
+        root.removeAttribute('data-theme');
+        icon.textContent = '☀';
+        label.textContent = 'Clair';
+      }
+    }
+
+    let saved = null;
+    try { saved = localStorage.getItem('fiche-theme'); } catch(e){}
+    // Pas de choix mémorisé -> on suit la préférence système (défaut CSS), sinon sombre.
+    let initial = saved;
+    if (!initial){
+      const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+      initial = prefersLight ? 'light' : 'dark';
+    }
+    apply(initial);
+
+    btn.addEventListener('click', () => {
+      const isLight = root.getAttribute('data-theme') === 'light';
+      const next = isLight ? 'dark' : 'light';
+      apply(next);
+      try { localStorage.setItem('fiche-theme', next); } catch(e){}
+    });
+  })();
+
+  (function(){
+    const navLinks = Array.from(document.querySelectorAll('nav.side a[href^="#"]'));
+    const sections = navLinks
+      .map(a => document.getElementById(a.getAttribute('href').slice(1)))
+      .filter(Boolean);
+    const progress = document.getElementById('readProgress');
+    const toTop = document.getElementById('toTop');
+
+    const sideNavEl = document.getElementById('sideNav');
+    let currentId = null;
+    let userScrollingNav = false;
+
+    // #4 — mapping section -> grande partie pour le chip mobile
+    const partOf = {
+      intro:'Introduction', ctml:'Socle théorique', principes:'Socle théorique', charge:'Socle théorique',
+      system12:'Socle théorique', bloom:'Socle théorique',
+      camil:'Immersion', 'cognition-immersion':'Immersion', biais:'Immersion', tension:'Immersion', simulateur:'Immersion',
+      'ux-immersive':'Application', arbre:'Application', checklist:'Application', mesure:'Application', lectures:'Application'
+    };
+    const crumbText = document.getElementById('navCrumbText');
+
+    function setActive(id){
+      if (id === currentId) return;
+      currentId = id;
+      navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+      if (crumbText && partOf[id]) crumbText.textContent = partOf[id];
+      // Recentrer l'item actif DANS la nav latérale uniquement (ne pas scroller la page,
+      // sinon ça crée un conflit avec le scroll de page qui bloque la molette sur la nav)
+      if (sideNavEl && !userScrollingNav){
+        const active = sideNavEl.querySelector('a.active');
+        if (active){
+          const target = active.offsetTop - sideNavEl.clientHeight / 2 + active.offsetHeight / 2;
+          const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          sideNavEl.scrollTo({ top: target, behavior: reduce ? 'auto' : 'smooth' });
+        }
+      }
+    }
+
+    // Ne pas déranger l'utilisateur quand il interagit directement avec la nav (survol/clic)
+    if (sideNavEl){
+      sideNavEl.addEventListener('mouseenter', () => { userScrollingNav = true; });
+      sideNavEl.addEventListener('mouseleave', () => { userScrollingNav = false; });
+
+      // Comportement du scroll sur la nav latérale :
+      //  - si la nav ne déborde PAS : on relaie tout à la page (preventDefault + scrollBy).
+      //  - si elle déborde et qu'on est AU BORD : on relaie à la page aussi.
+      //  - si elle déborde et qu'on est AU MILIEU : on NE FAIT RIEN (pas de preventDefault)
+      //    -> overflow:auto gère le scroll interne lui-même. Un preventDefault ici
+      //    tuerait AUSSI ce scroll interne (c'est le bug précédent : « rien ne bouge »).
+      sideNavEl.addEventListener('wheel', (e) => {
+        const canScroll = sideNavEl.scrollHeight > sideNavEl.clientHeight + 1;
+        const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (!canScroll){
+          e.preventDefault();
+          window.scrollBy({ top: e.deltaY, behavior: reduce ? 'auto' : 'smooth' });
+          return;
+        }
+        const atTop = sideNavEl.scrollTop <= 0;
+        const atBottom = sideNavEl.scrollTop + sideNavEl.clientHeight >= sideNavEl.scrollHeight - 1;
+        const goingDown = e.deltaY > 0;
+        if ((atTop && !goingDown) || (atBottom && goingDown)){
+          e.preventDefault();
+          window.scrollBy({ top: e.deltaY, behavior: reduce ? 'auto' : 'smooth' });
+          return;
+        }
+        // Milieu de la nav qui déborde : on laisse overflow:auto scroller en interne.
+      }, { passive: false });
+    }
+
+    // Scrollspy via IntersectionObserver (robuste, peu coûteux)
+    if ('IntersectionObserver' in window && sections.length){
+      const seen = new Map();
+      const obs = new IntersectionObserver((entries) => {
+        entries.forEach(e => seen.set(e.target.id, e.intersectionRatio));
+        // section la plus visible actuellement
+        let best = null, bestRatio = 0;
+        seen.forEach((ratio, id) => { if (ratio > bestRatio){ bestRatio = ratio; best = id; } });
+        if (best) setActive(best);
+      }, { rootMargin: '-20% 0px -70% 0px', threshold: [0, 0.25, 0.5, 1] });
+      sections.forEach(s => obs.observe(s));
+    }
+
+    // Barre de progression + bouton retour en haut
+    function onScroll(){
+      const doc = document.documentElement;
+      const max = doc.scrollHeight - doc.clientHeight;
+      const pct = max > 0 ? (doc.scrollTop / max) * 100 : 0;
+      if (progress) progress.style.width = pct + '%';
+      if (toTop) toTop.classList.toggle('show', doc.scrollTop > 600);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    if (toTop){
+      toTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+
+    // Bouton repliable de la nav (mobile)
+    const navToggle = document.getElementById('navToggle');
+    const sideNav = document.getElementById('sideNav');
+    if (navToggle && sideNav){
+      navToggle.addEventListener('click', () => {
+        const collapsed = sideNav.classList.toggle('collapsed');
+        navToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      });
+      // Replier la nav après un clic sur un lien (mobile)
+      sideNav.querySelectorAll('a[href^="#"]').forEach(a => {
+        a.addEventListener('click', () => {
+          if (window.matchMedia('(max-width:900px)').matches){
+            sideNav.classList.add('collapsed');
+            navToggle.setAttribute('aria-expanded', 'false');
+          }
+        });
+      });
+    }
+  })();
+
+  // ---- Indication de défilement horizontal (tableaux en mobile) ----
+  (function(){
+    const wraps = Array.from(document.querySelectorAll('.q-table-wrap'));
+    function update(){
+      wraps.forEach(w => {
+        w.classList.toggle('scrollable', w.scrollWidth > w.clientWidth + 4);
+      });
+    }
+    update();
+    window.addEventListener('resize', update, { passive: true });
+  })();
+
+  // ---- Accordéons : cartes cognitives/biais (.p-card.acc) + instruments de mesure (.measure) ----
+  (function(){
+    function wireAccordion(selector){
+      document.querySelectorAll(selector).forEach(card => {
+        const toggle = () => {
+          const open = card.classList.toggle('open');
+          card.setAttribute('aria-expanded', open ? 'true' : 'false');
+        };
+        card.addEventListener('click', (e) => {
+          // ne pas fermer si on clique un lien interne
+          if (e.target.closest('a')) return;
+          toggle();
+        });
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggle(); }
+        });
+      });
+    }
+    wireAccordion('.p-card.acc');
+    wireAccordion('.measure');
+  })();
+
+  // ---- Flash de la référence ciblée au clic sur un reflink ----
+  (function(){
+    document.querySelectorAll('a.reflink[href^="#"]').forEach(a => {
+      a.addEventListener('click', () => {
+        const id = a.getAttribute('href').slice(1);
+        const target = document.getElementById(id);
+        if (target){
+          target.classList.remove('flash');
+          void target.offsetWidth; // reflow pour relancer l'animation
+          target.classList.add('flash');
+          const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+        }
+      });
+    });
+  })();
+</script>
+</body>
+</html>
